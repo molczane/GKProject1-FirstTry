@@ -39,9 +39,14 @@ fun CanvasToDrawView(
     edgesColor: Color = Color.White
 ) {
     var points by remember { mutableStateOf(emptyList<Offset>()) }
+    var lines by remember { mutableStateOf(emptyList<LineSegment>()) }
     var draggingPointIndex by remember { mutableStateOf<Int?>(null) }
     var dragOffset by remember { mutableStateOf(Offset.Zero) }
     var isPolygonClosed by remember { mutableStateOf(false) }
+
+    var showColorPicker by remember { mutableStateOf(false) }
+    var selectedLineIndex by remember { mutableStateOf<Int?>(null) }
+    var selectedColor by remember { mutableStateOf(Color.Red) }
 
     Box(modifier = modifier.fillMaxSize()
         .background(fieldColor)
