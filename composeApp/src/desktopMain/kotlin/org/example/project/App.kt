@@ -3,10 +3,7 @@ package org.example.project
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ContextMenuArea
 import androidx.compose.foundation.ContextMenuItem
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.PointerMatcher
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
@@ -15,15 +12,6 @@ import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -36,12 +24,6 @@ import androidx.compose.ui.input.pointer.isPrimaryPressed
 import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupProperties
-import com.github.skydoves.colorpicker.compose.ColorEnvelope
-import com.github.skydoves.colorpicker.compose.HsvColorPicker
-import com.github.skydoves.colorpicker.compose.rememberColorPickerController
 
 @Composable
 @Preview
@@ -54,12 +36,11 @@ fun App() {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun CanvasToDrawView(
     modifier: Modifier,
-    fieldColor: Color = Color.LightGray,
-    edgesColor: Color = Color.White
+    fieldColor: Color = Color.LightGray
 ) {
     var points by remember { mutableStateOf(emptyList<Offset>()) }
     var lines by remember { mutableStateOf(emptyList<LineSegment>()) }
@@ -67,34 +48,42 @@ fun CanvasToDrawView(
     var dragOffset by remember { mutableStateOf(Offset.Zero) }
     var isPolygonClosed by remember { mutableStateOf(false) }
 
-    var showColorPicker by remember { mutableStateOf(false) }
-    var selectedLineIndex by remember { mutableStateOf<Int?>(null) }
-    var selectedColor by remember { mutableStateOf(Color.Red) }
-
     var showContextMenu by remember { mutableStateOf(false) }
     var clickPosition by remember { mutableStateOf(Offset.Zero) }
 
-    Box(modifier = modifier.fillMaxSize()
+    var draggingLineIndex by remember { mutableStateOf<Int?>(null) }
+    var dragLineOffsetStart by remember { mutableStateOf(Offset.Zero) }
+    var dragLineOffsetEnd by remember { mutableStateOf(Offset.Zero) }
+
+    ContextMenuArea(items = {
+        listOf(
+            ContextMenuItem("User-defined Action") {/*do nothing*/},
+            ContextMenuItem("Another user-defined action") {/*do something else*/}
+        )
+    }) {
+        Box(modifier = modifier.fillMaxSize()
             .background(fieldColor)
-            .onPointerEvent(PointerEventType.Press) {
-                    pointerEvent ->
+            .onPointerEvent(PointerEventType.Press) { pointerEvent ->
                 // Sprawdź stan przycisków myszy w zdarzeniu
                 val offset = pointerEvent.changes.firstOrNull()?.position
                 if (offset != null) {
-
                     if (pointerEvent.buttons.isPrimaryPressed) {
                         println("Left mouse button clicked!")
                         if (!isPolygonClosed) {
+                            draggingPointIndex = points.indexOfFirst {
+                                (offset - it).getDistance() < 20.dp.toPx()
+                            }.takeIf { it != -1 }
                             if (points.isNotEmpty() && (offset - points.first()).getDistance() < 20.dp.toPx()) {
                                 // If the new point is close to the first point, close the polygon
+                                lines = lines + LineSegment(points.last(), points.first())
                                 isPolygonClosed = true
-                            } else {
+                            } else if (draggingPointIndex == null) {
                                 var newLineSegment: LineSegment? = null
-                                if (points.isNotEmpty()) {
-                                    lines = lines + LineSegment(points.last(), offset)
-                                    newLineSegment = LineSegment(points.last(), offset)
-                                }
                                 points = points + offset
+                                if (points.size > 1) {
+                                    lines = lines + LineSegment(points[points.size - 2], points.last())
+                                    newLineSegment = LineSegment(points[points.size - 2], points.last())
+                                }
                                 println("New point added: $offset!")
                                 println("New line added: $newLineSegment")
                             }
@@ -116,74 +105,152 @@ fun CanvasToDrawView(
                             draggingPointIndex = points.indexOfFirst {
                                 (offset - it).getDistance() < 20.dp.toPx()
                             }.takeIf { it != -1 }
-                            if (draggingPointIndex != null) {
-                                dragOffset = offset - points[draggingPointIndex!!]
+                            if(!isPolygonClosed && draggingPointIndex == points.size - 1) {
+                                draggingPointIndex = null
+                            }
+                            else {
+                                println("Point selected: $draggingPointIndex")
+                                if (draggingPointIndex != null) {
+                                    dragOffset = offset - points[draggingPointIndex!!]
+                                    draggingLineIndex = null
+                                    println("Point selected: $draggingPointIndex")
+                                }
+                                if (draggingPointIndex == null) {
+                                    draggingLineIndex = lines.indexOfFirst {
+                                        distancePointToLineSegment(
+                                            offset,
+                                            it.start,
+                                            it.end
+                                        ) < 20.dp.toPx()
+                                    }.takeIf { it != -1 }
+                                    if (draggingLineIndex != null) {
+                                        dragLineOffsetStart =
+                                            offset - lines[draggingLineIndex!!].start
+                                        dragLineOffsetEnd = offset - lines[draggingLineIndex!!].end
+                                        val index = draggingLineIndex!!
+                                        lines = lines.toMutableList().also {
+                                            it[index] = LineSegment(
+                                                it[index].start,
+                                                it[index].end,
+                                                Color.Blue,
+                                                4.dp
+                                            )
+                                        }
+                                        println("Line selected: $draggingLineIndex")
+                                    }
+                                }
                             }
                         },
-                        onDrag = { change, dragAmount ->
+                        onDrag = { change, _ ->
                             if (draggingPointIndex != null) {
                                 val index = draggingPointIndex!!
                                 points = points.toMutableList().also {
                                     it[index] = change.position - dragOffset
                                 }
+                                if(lines.isNotEmpty()) {
+                                    if(index == 0) {
+                                        if(isPolygonClosed) {
+                                            lines = lines.toMutableList().also {
+                                                it[lines.size - 1] =
+                                                    LineSegment(it[lines.size - 1].start, points[index])
+                                                it[index] = LineSegment(points[index], it[index].end)
+                                            }
+                                        }
+                                    }
+                                    else {
+                                        lines = lines.toMutableList().also {
+                                            it[index - 1] =
+                                                LineSegment(it[index - 1].start, points[index])
+                                            it[index] = LineSegment(points[index], it[index].end)
+                                        }
+                                    }
+                                }
+                            }
+                            if(draggingLineIndex != null && draggingPointIndex == null) {
+                                val index = draggingLineIndex!!
+                                lines = lines.toMutableList().also {
+                                    it[index] = LineSegment(change.position - dragLineOffsetStart, change.position - dragLineOffsetEnd, Color.Blue, 4.dp)
+                                    if(index == 0)
+                                    {
+                                        it[lines.size - 1] = LineSegment(it[lines.size - 1].start, change.position - dragLineOffsetStart)
+                                    }
+                                    else {
+                                        it[(index - 1) % lines.size] = LineSegment(
+                                            it[(index - 1) % lines.size].start,
+                                            change.position - dragLineOffsetStart
+                                        )
+                                    }
+                                    it[(index + 1) % lines.size] = LineSegment(change.position - dragLineOffsetEnd , it[(index + 1) % lines.size].end)
+                                }
+                                points = points.toMutableList().also {
+                                    it[index] = change.position - dragLineOffsetStart
+                                    it[(index + 1) % points.size] = change.position - dragLineOffsetEnd
+                                }
                             }
                             change.consume()
                         },
                         onDragEnd = {
+                            if(draggingLineIndex != null) {
+                                val index = draggingLineIndex!!
+                                lines = lines.toMutableList().also {
+                                    it[index] = LineSegment(it[index].start, it[index].end, Color.Black, 2.dp)
+                                }
+                            }
                             draggingPointIndex = null
+                            draggingLineIndex = null
                             dragOffset = Offset.Zero
                         }
                     )
                 }
             ) {
                 // Draw lines between points
-                if (points.size > 1) {
-                    for (i in 0 until points.size - 1) {
+                if (lines.isNotEmpty()) {
+                    for (i in 0 until lines.size) {
                         drawLine(
-                            color = Color.Black,
-                            start = points[i],
-                            end = points[i + 1],
-                            strokeWidth = 2.dp.toPx()
+                            color = lines[i].color,
+                            start = lines[i].start,
+                            end = lines[i].end,
+                            strokeWidth = lines[i].strokeWidth.toPx()
                         )
                     }
                     if (isPolygonClosed) {
                         // Draw the closing line if the polygon is closed
                         drawLine(
                             color = Color.Green,
-                            start = points.last(),
-                            end = points.first(),
-                            strokeWidth = 2.dp.toPx()
+                            start = lines.last().start,
+                            end = lines.last().end,
+                            strokeWidth = lines.last().strokeWidth.toPx()
                         )
                     }
                 }
 
-                // Draw points
-                points.forEach { point ->
-                    drawCircle(
-                        color = Color.Red,
-                        center = point,
-                        radius = 4.dp.toPx()
-                    )
+                if(points.size == 1) {
+                    // Draw points
+                    points.forEach { point ->
+                        drawCircle(
+                            color = Color.Red,
+                            center = point,
+                            radius = 4.dp.toPx()
+                        )
+                    }
                 }
-            }
-        if (showContextMenu) {
-            Popup(
-                offset = IntOffset(clickPosition.x.toInt(), clickPosition.y.toInt()),
-                onDismissRequest = { showContextMenu = false },
-                properties = PopupProperties(focusable = true)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .background(Color.White)
-                        .size(150.dp)
-                ) {
-                    Text("Option 1", modifier = Modifier.padding(8.dp))
-                    Text("Option 2", modifier = Modifier.padding(8.dp))
-                    Text("Option 3", modifier = Modifier.padding(8.dp))
+                else {
+                    lines.forEach { line ->
+                        drawCircle(
+                            color = Color.Red,
+                            center = line.start,
+                            radius = 4.dp.toPx()
+                        )
+                        drawCircle(
+                            color = Color.Red,
+                            center = line.end,
+                            radius = 4.dp.toPx()
+                        )
+                    }
                 }
             }
         }
-        }
+    }
 }
 
 fun distancePointToLineSegment(point: Offset, start: Offset, end: Offset): Float {
@@ -198,42 +265,4 @@ fun distancePointToLineSegment(point: Offset, start: Offset, end: Offset): Float
         val projection = Offset(start.x + t * (end.x - start.x), start.y + t * (end.y - start.y))
         (point - projection).getDistance()
     }
-}
-
-@Composable
-fun ColorPickerDialog(
-    initialColor: Color,
-    onColorSelected: (Color) -> Unit,
-    onDismiss: () -> Unit
-) {
-    var selectedColor by remember { mutableStateOf(initialColor) }
-
-    val controller = rememberColorPickerController()
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Wybierz kolor") },
-        text = {
-            HsvColorPicker(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(450.dp)
-                    .padding(10.dp),
-                controller = controller,
-                onColorChanged = { colorEnvelope: ColorEnvelope ->
-                    // do something
-                }
-            )
-        },
-        confirmButton = {
-            Button(onClick = { onColorSelected(selectedColor) }) {
-                Text("OK")
-            }
-        },
-        dismissButton = {
-            Button(onClick = onDismiss) {
-                Text("Anuluj")
-            }
-        }
-    )
 }
