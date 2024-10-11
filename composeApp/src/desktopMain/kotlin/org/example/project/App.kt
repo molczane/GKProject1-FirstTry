@@ -24,6 +24,10 @@ import androidx.compose.ui.input.pointer.isPrimaryPressed
 import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
+import org.example.project.algorithms.drawBresenhamLine
+import org.example.project.algorithms.drawCubicBezier
+import org.example.project.algorithms.drawDashedLine
+import org.example.project.algorithms.drawQuadraticBezier
 
 @Composable
 @Preview
@@ -248,6 +252,25 @@ fun CanvasToDrawView(
                         )
                     }
                 }
+
+
+                /* TESTOWE RYSOWANIE NA CANVASIE WŁĄSNYMI ALGORYTMAMI */
+
+                drawBresenhamLine(Offset(0.0F, 0.0F), Offset(200.0F, 200.0F), Color.Blue)
+
+                // Definicja punktów kontrolnych dla krzywej kubicznej Beziera
+                val start = Offset(50f, 300f)
+                val control1 = Offset(150f, 50f)
+                val control2 = Offset(250f, 500f)
+                val end = Offset(350f, 300f)
+
+                // Rysowanie przerywanego wieloboku kontrolnego
+                drawDashedLine(start, control1, Color.Gray)
+                drawDashedLine(control1, control2, Color.Gray)
+                drawDashedLine(control2, end, Color.Gray)
+
+                // Rysowanie krzywej kubicznej Beziera
+                drawCubicBezier(start, control1, control2, end, Color.Black)
             }
         }
     }
