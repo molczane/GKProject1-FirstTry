@@ -27,6 +27,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import org.example.project.algorithms.drawBresenhamLine
 import org.example.project.algorithms.drawCubicBezier
 import org.example.project.algorithms.drawDashedLine
+import org.example.project.algorithms3D.drawLine3D
+import org.example.project.algorithms3D.project3DTo2D
 
 @Composable
 @Preview
