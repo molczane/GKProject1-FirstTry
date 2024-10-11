@@ -27,7 +27,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import org.example.project.algorithms.drawBresenhamLine
 import org.example.project.algorithms.drawCubicBezier
 import org.example.project.algorithms.drawDashedLine
-import org.example.project.algorithms.drawQuadraticBezier
 
 @Composable
 @Preview
@@ -137,7 +136,7 @@ fun CanvasToDrawView(
                                                 it[index].start,
                                                 it[index].end,
                                                 Color.Blue,
-                                                4.dp
+                                                4F
                                             )
                                         }
                                         println("Line selected: $draggingLineIndex")
@@ -173,7 +172,7 @@ fun CanvasToDrawView(
                             if(draggingLineIndex != null && draggingPointIndex == null) {
                                 val index = draggingLineIndex!!
                                 lines = lines.toMutableList().also {
-                                    it[index] = LineSegment(change.position - dragLineOffsetStart, change.position - dragLineOffsetEnd, Color.Blue, 4.dp)
+                                    it[index] = LineSegment(change.position - dragLineOffsetStart, change.position - dragLineOffsetEnd, Color.Blue, 4F)
                                     if(index == 0)
                                     {
                                         it[lines.size - 1] = LineSegment(it[lines.size - 1].start, change.position - dragLineOffsetStart)
@@ -197,7 +196,7 @@ fun CanvasToDrawView(
                             if(draggingLineIndex != null) {
                                 val index = draggingLineIndex!!
                                 lines = lines.toMutableList().also {
-                                    it[index] = LineSegment(it[index].start, it[index].end, Color.Black, 2.dp)
+                                    it[index] = LineSegment(it[index].start, it[index].end, Color.Black, 2F)
                                 }
                             }
                             draggingPointIndex = null
@@ -210,20 +209,32 @@ fun CanvasToDrawView(
                 // Draw lines between points
                 if (lines.isNotEmpty()) {
                     for (i in 0 until lines.size) {
-                        drawLine(
+//                        drawLine(
+//                            color = lines[i].color,
+//                            start = lines[i].start,
+//                            end = lines[i].end,
+//                            strokeWidth = lines[i].strokeWidth.toPx()
+//                        )
+                        drawBresenhamLine(
                             color = lines[i].color,
                             start = lines[i].start,
                             end = lines[i].end,
-                            strokeWidth = lines[i].strokeWidth.toPx()
+                            width = lines[i].strokeWidth
                         )
                     }
                     if (isPolygonClosed) {
                         // Draw the closing line if the polygon is closed
-                        drawLine(
+//                        drawLine(
+//                            color = Color.Green,
+//                            start = lines.last().start,
+//                            end = lines.last().end,
+//                            strokeWidth = lines.last().strokeWidth.toPx()
+//                        )
+                        drawBresenhamLine(
                             color = Color.Green,
                             start = lines.last().start,
                             end = lines.last().end,
-                            strokeWidth = lines.last().strokeWidth.toPx()
+                            width = lines.last().strokeWidth
                         )
                     }
                 }

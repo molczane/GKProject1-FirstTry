@@ -2,9 +2,8 @@ package org.example.project.algorithms
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.toSize
 
-fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBresenhamLine(start: Offset, end: Offset, color: Color) {
+fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBresenhamLine(start: Offset, end: Offset, color: Color, width: Float = 2f) {
     var x0 = start.x.toInt()
     var y0 = start.y.toInt()
     val x1 = end.x.toInt()
@@ -20,7 +19,7 @@ fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBresenhamLine(start: Of
         // Rysowanie pojedynczego punktu w obliczonym miejscu
         //drawRect(color, topLeft = Offset(x0.toFloat(), y0.toFloat()), size = androidx.compose.ui.unit.IntSize(8, 8).toSize())
 
-        drawCircle(color, radius = 4f, center = Offset(x0.toFloat(), y0.toFloat()))
+        drawCircle(color, radius = width, center = Offset(x0.toFloat(), y0.toFloat()))
 
         if (x0 == x1 && y0 == y1) break
         val e2 = 2 * err
