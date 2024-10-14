@@ -31,6 +31,7 @@ import org.example.project.algorithms.drawCubicBezier
 import org.example.project.utils.LineSegment
 import org.example.project.utils.Relations
 import org.example.project.utils.drawRelation
+import org.example.project.utils.midpoint
 
 @Composable
 @Preview
@@ -64,21 +65,53 @@ fun CanvasToDrawView(
     var draggingLineIndex by remember { mutableStateOf<Int?>(null) }
     var selectedLineIndex by remember { mutableStateOf<Int?>(null) }
 
-    var dragLineOffsetStart by remember { mutableStateOf(Offset.Zero) }
-    var dragLineOffsetEnd by remember { mutableStateOf(Offset.Zero) }
-
     ContextMenuArea(items = {
         val menuItems = mutableListOf<ContextMenuItem>()
         if(selectedLineIndex == null && selectedPointIndex == null) {
             menuItems.add(ContextMenuItem("Nie wybrano żadnego elementu") { /*TODO*/ })
         }
         if(selectedPointIndex != null) {
-            menuItems.add(ContextMenuItem("Usuń punkt"){/*do nothing*/})
-            selectedPointIndex = null
+            menuItems.add(
+                ContextMenuItem("Usuń punkt") {
+                    val index = selectedPointIndex!!
+                    if(index != 0)
+                    {
+                        lines = lines.toMutableList().also {
+                            it[index - 1] = LineSegment(it[index - 1].start, it[index].end)
+                            it.removeAt(index)
+                        }
+                    }
+                    else {
+                        lines = lines.toMutableList().also {
+                            it[lines.size - 1] = LineSegment(it[lines.size - 1].start, it[index].end)
+                            it.removeAt(index)
+                        }
+                    }
+                    points = points.toMutableList().also {
+                        it.removeAt(index)
+                    }
+                    println("Usunięto punkt ${index}!")
+                }
+            )
         }
         if(selectedLineIndex != null) {
             val index = selectedLineIndex!!
             val line = lines[index]
+            menuItems.add(ContextMenuItem("Dodaj punkt w środku linii") {
+                val midPoint = line.start.midpoint(line.end)
+                points = points.toMutableList().also {
+                    it.add(index + 1, midPoint)
+                }
+                lines = lines.toMutableList().also {
+                    val line = lines[index].copy()
+                    it[index] = LineSegment(
+                        start = it[index].start,
+                        end = midPoint,
+                        relation = Relations.None
+                    )
+                    it.add(index + 1, LineSegment(midPoint, line.end))
+                }
+            })
             if(line.relation != Relations.Vertical) {
                 menuItems.add(
                     ContextMenuItem("Ustal bok na pionowy") {
@@ -155,7 +188,6 @@ fun CanvasToDrawView(
                 )
             }
         }
-        selectedPointIndex = null
         selectedLineIndex = null
         menuItems
     }) {
@@ -321,20 +353,6 @@ fun CanvasToDrawView(
                         )
                     }
                 }
-
-
-//                /* TESTOWE RYSOWANIE NA CANVASIE WŁĄSNYMI ALGORYTMAMI */
-//
-//                drawBresenhamLine(Offset(0.0F, 0.0F), Offset(200.0F, 200.0F), Color.Blue)
-//
-//                // Definicja punktów kontrolnych dla krzywej kubicznej Beziera
-//                val start = Offset(50f, 300f)
-//                val control1 = Offset(150f, 50f)
-//                val control2 = Offset(250f, 500f)
-//                val end = Offset(350f, 300f)
-//
-//                // Rysowanie krzywej kubicznej Beziera
-//                drawCubicBezier(start, control1, control2, end, Color.Black)
             }
         }
     }

@@ -10,7 +10,7 @@ fun main() = application {
         onCloseRequest = ::exitApplication,
         title = "Polygon Editor - Ernest Mołczan",
         state = rememberWindowState(width = 1000.dp, height = 700.dp), // Set fixed size here
-        resizable = false // Prevent resizing
+        resizable = true // ~Prevent resizing
     ) {
         App()
     }
