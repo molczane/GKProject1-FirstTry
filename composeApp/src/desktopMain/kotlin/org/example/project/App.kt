@@ -51,7 +51,10 @@ fun CanvasToDrawView(
 ) {
     var points by remember { mutableStateOf(emptyList<Offset>()) }
     var lines by remember { mutableStateOf(emptyList<LineSegment>()) }
+
     var draggingPointIndex by remember { mutableStateOf<Int?>(null) }
+    var selectedPointIndex by remember { mutableStateOf<Int?>(null) }
+
     var dragOffset by remember { mutableStateOf(Offset.Zero) }
     var isPolygonClosed by remember { mutableStateOf(false) }
 
@@ -60,66 +63,101 @@ fun CanvasToDrawView(
 
     var draggingLineIndex by remember { mutableStateOf<Int?>(null) }
     var selectedLineIndex by remember { mutableStateOf<Int?>(null) }
+
     var dragLineOffsetStart by remember { mutableStateOf(Offset.Zero) }
     var dragLineOffsetEnd by remember { mutableStateOf(Offset.Zero) }
 
     ContextMenuArea(items = {
-        listOf(
-            ContextMenuItem("Ustal bok na pionowy") {
-                if(selectedLineIndex != null){
-                    val index = selectedLineIndex!!
-                    lines = lines.toMutableList().also {
-                        it[index] = LineSegment(start=it[index].start, end=it[index].end, relation=Relations.Vertical)
+        val menuItems = mutableListOf<ContextMenuItem>()
+        if(selectedLineIndex == null && selectedPointIndex == null) {
+            menuItems.add(ContextMenuItem("Nie wybrano żadnego elementu") { /*TODO*/ })
+        }
+        if(selectedPointIndex != null) {
+            menuItems.add(ContextMenuItem("Usuń punkt"){/*do nothing*/})
+            selectedPointIndex = null
+        }
+        if(selectedLineIndex != null) {
+            val index = selectedLineIndex!!
+            val line = lines[index]
+            if(line.relation != Relations.Vertical) {
+                menuItems.add(
+                    ContextMenuItem("Ustal bok na pionowy") {
+                            lines = lines.toMutableList().also {
+                                it[index] = LineSegment(
+                                    start = it[index].start,
+                                    end = it[index].end,
+                                    relation = Relations.Vertical
+                                )
+                            }
+                            println("Ustalono linię ${index} na pionową!")
+                        selectedLineIndex = null
                     }
-                    println("Ustalono linię ${index} na pionową!")
-                }
-                selectedLineIndex = null
-            },
-            ContextMenuItem("Ustal bok na poziomy") {
-                if(selectedLineIndex != null){
-                    val index = selectedLineIndex!!
-                    lines = lines.toMutableList().also {
-                        it[index] = LineSegment(start=it[index].start, end=it[index].end, relation=Relations.Horizontal)
-                    }
-                    println("Ustalono linię ${index} na poziomą!")
-                }
-                selectedLineIndex = null
-            },
-            ContextMenuItem("Ustal bok na stała długość") {
-                if(selectedLineIndex != null){
-                    val index = selectedLineIndex!!
-                    lines = lines.toMutableList().also {
-                        it[index] = LineSegment(start=it[index].start, end=it[index].end, relation=Relations.FixedLength)
-                    }
-                    println("Ustalono linię ${index} na stałą długość!")
-                }
-                selectedLineIndex = null
-            },
-            ContextMenuItem("Zrób z boku krzywą Beziera 3-go stopnia") {
-                if(selectedLineIndex != null){
-                    val index = selectedLineIndex!!
-                    lines = lines.toMutableList().also {
-                        it[index] = LineSegment(
-                            start=it[index].start,
-                            end=it[index].end,
-                            relation=Relations.Bezier,
-                            bezierSegment = calculateCubicBezierControlPoints(it[index].start, it[index].end))
-                    }
-                    println("Ustalono linię ${index} na segment Beziera 3-go stopnia!")
-                }
-                selectedLineIndex = null
-            },
-            ContextMenuItem("Usuń ograniczenia") {
-                if(selectedLineIndex != null){
-                    val index = selectedLineIndex!!
-                    lines = lines.toMutableList().also {
-                        it[index] = LineSegment(start=it[index].start, end=it[index].end, relation=Relations.None)
-                    }
-                    println("Usunięto ograniczenia z linii ${index}!")
-                }
-                selectedLineIndex = null
+                )
             }
-        )
+            if(line.relation != Relations.Horizontal) {
+                menuItems.add(ContextMenuItem("Ustal bok na poziomy") {
+                        lines = lines.toMutableList().also {
+                            it[index] = LineSegment(
+                                start = it[index].start,
+                                end = it[index].end,
+                                relation = Relations.Horizontal
+                            )
+                        }
+                        println("Ustalono linię ${index} na poziomą!")
+                    selectedLineIndex = null
+                }
+                )
+            }
+            if(line.relation != Relations.FixedLength) {
+                menuItems.add(ContextMenuItem("Ustal bok na stała długość") {
+                        lines = lines.toMutableList().also {
+                            it[index] = LineSegment(
+                                start = it[index].start,
+                                end = it[index].end,
+                                relation = Relations.FixedLength
+                            )
+                        }
+                        println("Ustalono linię ${index} na stałą długość!")
+                    selectedLineIndex = null
+                }
+                )
+            }
+            if(line.relation != Relations.Bezier) {
+                menuItems.add(ContextMenuItem("Zrób z boku krzywą Beziera 3-go stopnia") {
+                        lines = lines.toMutableList().also {
+                            it[index] = LineSegment(
+                                start = it[index].start,
+                                end = it[index].end,
+                                relation = Relations.Bezier,
+                                bezierSegment = calculateCubicBezierControlPoints(
+                                    it[index].start,
+                                    it[index].end
+                                )
+                            )
+                        }
+                        println("Ustalono linię ${index} na segment Beziera 3-go stopnia!")
+                    selectedLineIndex = null
+                }
+                )
+            }
+            if(line.relation != Relations.None) {
+                menuItems.add(ContextMenuItem("Usuń ograniczenia") {
+                        lines = lines.toMutableList().also {
+                            it[index] = LineSegment(
+                                start = it[index].start,
+                                end = it[index].end,
+                                relation = Relations.None
+                            )
+                        }
+                        println("Usunięto ograniczenia z linii ${index}!")
+                    selectedLineIndex = null
+                }
+                )
+            }
+        }
+        selectedPointIndex = null
+        selectedLineIndex = null
+        menuItems
     }) {
         Box(modifier = modifier.fillMaxSize()
             .background(fieldColor)
@@ -152,13 +190,18 @@ fun CanvasToDrawView(
                     if (pointerEvent.buttons.isSecondaryPressed) {
                         println("Right mouse button clicked!")
                         clickPosition = pointerEvent.changes.first().position
-                        selectedLineIndex = lines.indexOfFirst {
-                            distancePointToLineSegment(
-                                offset,
-                                it.start,
-                                it.end
-                            ) < 20.dp.toPx()
+                        selectedPointIndex = points.indexOfFirst {
+                            (offset - it).getDistance() < 20.dp.toPx()
                         }.takeIf { it != -1 }
+                        if(selectedPointIndex == null) {
+                            selectedLineIndex = lines.indexOfFirst {
+                                distancePointToLineSegment(
+                                    offset,
+                                    it.start,
+                                    it.end
+                                ) < 20.dp.toPx()
+                            }.takeIf { it != -1 }
+                        }
                         showContextMenu = true
                         println("Selected line index: $selectedLineIndex")
                     }
@@ -213,12 +256,6 @@ fun CanvasToDrawView(
                             change.consume()
                         },
                         onDragEnd = {
-//                            if(draggingLineIndex != null) {
-//                                val index = draggingLineIndex!!
-//                                lines = lines.toMutableList().also {
-//                                    it[index] = LineSegment(it[index].start, it[index].end, Color.Black, 2F, it[index].relation)
-//                                }
-//                            }
                             draggingPointIndex = null
                             draggingLineIndex = null
                             dragOffset = Offset.Zero
