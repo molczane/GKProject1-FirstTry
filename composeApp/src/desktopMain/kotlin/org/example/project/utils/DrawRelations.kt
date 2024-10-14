@@ -2,7 +2,6 @@ package org.example.project.utils
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.IntSize
@@ -21,12 +20,12 @@ fun DrawScope.drawRelation(segment: LineSegment) {
             val midPoint = segment.start.midpoint(segment.end)
             // Rysowanie szarego prostokąta
             drawRect(
-                color = Color.LightGray, // Szary z lekką przezroczystością
+                color = Color.LightGray, // Szary
                 topLeft = Offset(midPoint.x - rectWidth / 2, midPoint.y - rectHeight / 2),
                 size = IntSize(rectWidth.toInt(), rectHeight.toInt()).toSize()
             )
             drawRect(
-                color = Color.LightGray, // Szary z lekką przezroczystością
+                color = Color.LightGray, // Szary
                 topLeft = Offset(midPoint.x - rectWidth / 2, midPoint.y - rectHeight / 2),
                 size = IntSize(rectWidth.toInt(), rectHeight.toInt()).toSize(),
                 style = Stroke(width = 4f)
@@ -42,12 +41,12 @@ fun DrawScope.drawRelation(segment: LineSegment) {
             // Rysujemy pionową kreskę symbolizującą ograniczenie
             val midPoint = segment.start.midpoint(segment.end)
             drawRect(
-                color = Color.LightGray, // Szary z lekką przezroczystością
+                color = Color.LightGray, // Szary
                 topLeft = Offset(midPoint.x - rectWidth / 2, midPoint.y - rectHeight / 2),
                 size = IntSize(rectWidth.toInt(), rectHeight.toInt()).toSize()
             )
             drawRect(
-                color = Color.LightGray, // Szary z lekką przezroczystością
+                color = Color.LightGray, // Szary
                 topLeft = Offset(midPoint.x - rectWidth / 2, midPoint.y - rectHeight / 2),
                 size = IntSize(rectWidth.toInt(), rectHeight.toInt()).toSize(),
                 style = Stroke(width = 4f)
@@ -63,12 +62,12 @@ fun DrawScope.drawRelation(segment: LineSegment) {
             // Rysujemy kółko symbolizujące zadaną długość
             val midPoint = segment.start.midpoint(segment.end)
             drawRect(
-                color = Color.LightGray, // Szary z lekką przezroczystością
+                color = Color.LightGray, // Szary
                 topLeft = Offset(midPoint.x - rectWidth / 2, midPoint.y - rectHeight / 2),
                 size = IntSize(rectWidth.toInt(), rectHeight.toInt()).toSize()
             )
             drawRect(
-                color = Color.LightGray, // Szary z lekką przezroczystością
+                color = Color.LightGray, // Szary
                 topLeft = Offset(midPoint.x - rectWidth / 2, midPoint.y - rectHeight / 2),
                 size = IntSize(rectWidth.toInt(), rectHeight.toInt()).toSize(),
                 style = Stroke(width = 4f)

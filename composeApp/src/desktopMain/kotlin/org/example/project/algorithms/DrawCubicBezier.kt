@@ -6,9 +6,15 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import kotlin.math.pow
 
 // Funkcja rysująca krzywą kubiczną Beziera
-fun DrawScope.drawCubicBezier(start: Offset, control1: Offset, control2: Offset, end: Offset, color: Color) {
+fun DrawScope.drawCubicBezier(start: Offset, control1: Offset, control2: Offset, end: Offset, color: Color = Color.Black) {
     val steps = 200 // Im więcej kroków, tym bardziej gładka krzywa
     var previousPoint = start
+
+    // Rysowanie przerywanego wieloboku kontrolnego
+    drawDashedLine(start, control1, Color.Gray)
+    drawDashedLine(control1, control2, Color.Gray)
+    drawDashedLine(control2, end, Color.Gray)
+    drawDashedLine(start, end, Color.Gray)
 
     for (i in 1..steps) {
         val t = i / steps.toFloat()

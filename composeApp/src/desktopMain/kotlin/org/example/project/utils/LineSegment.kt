@@ -8,5 +8,6 @@ data class LineSegment(
     val end: Offset,
     val color: Color = Color.Black,
     val strokeWidth: Float = 2F,
-    val relation: Relations = Relations.None
+    val relation: Relations = Relations.None,
+    val bezierSegment: CubicBezierSegment? = null
 )

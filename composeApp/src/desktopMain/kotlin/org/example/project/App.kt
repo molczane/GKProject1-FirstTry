@@ -24,10 +24,10 @@ import androidx.compose.ui.input.pointer.isPrimaryPressed
 import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
+import org.example.project.algorithms.calculateCubicBezierControlPoints
 import org.example.project.algorithms.distancePointToLineSegment
 import org.example.project.algorithms.drawBresenhamLine
 import org.example.project.algorithms.drawCubicBezier
-import org.example.project.algorithms.drawDashedLine
 import org.example.project.utils.LineSegment
 import org.example.project.utils.Relations
 import org.example.project.utils.drawRelation
@@ -99,7 +99,11 @@ fun CanvasToDrawView(
                 if(selectedLineIndex != null){
                     val index = selectedLineIndex!!
                     lines = lines.toMutableList().also {
-                        it[index] = LineSegment(start=it[index].start, end=it[index].end, relation=Relations.Bezier)
+                        it[index] = LineSegment(
+                            start=it[index].start,
+                            end=it[index].end,
+                            relation=Relations.Bezier,
+                            bezierSegment = calculateCubicBezierControlPoints(it[index].start, it[index].end))
                     }
                     println("Ustalono linię ${index} na segment Beziera 3-go stopnia!")
                 }
@@ -179,31 +183,6 @@ fun CanvasToDrawView(
                                     draggingLineIndex = null
                                     println("Point selected: $draggingPointIndex")
                                 }
-                                if (draggingPointIndex == null) {
-                                    draggingLineIndex = lines.indexOfFirst {
-                                        distancePointToLineSegment(
-                                            offset,
-                                            it.start,
-                                            it.end
-                                        ) < 20.dp.toPx()
-                                    }.takeIf { it != -1 }
-                                    if (draggingLineIndex != null) {
-                                        dragLineOffsetStart =
-                                            offset - lines[draggingLineIndex!!].start
-                                        dragLineOffsetEnd = offset - lines[draggingLineIndex!!].end
-                                        val index = draggingLineIndex!!
-                                        lines = lines.toMutableList().also {
-                                            it[index] = LineSegment(
-                                                it[index].start,
-                                                it[index].end,
-                                                Color.Blue,
-                                                4F,
-                                                it[index].relation
-                                            )
-                                        }
-                                        println("Line selected: $draggingLineIndex")
-                                    }
-                                }
                             }
                         },
                         onDrag = { change, _ ->
@@ -231,37 +210,15 @@ fun CanvasToDrawView(
                                     }
                                 }
                             }
-                            if(draggingLineIndex != null && draggingPointIndex == null) {
-                                val index = draggingLineIndex!!
-                                lines = lines.toMutableList().also {
-                                    it[index] = LineSegment(change.position - dragLineOffsetStart, change.position - dragLineOffsetEnd, Color.Blue, 4F, it[index].relation)
-                                    if(index == 0)
-                                    {
-                                        it[lines.size - 1] = LineSegment(it[lines.size - 1].start, change.position - dragLineOffsetStart, relation = it[lines.size - 1].relation)
-                                    }
-                                    else {
-                                        it[(index - 1) % lines.size] = LineSegment(
-                                            it[(index - 1) % lines.size].start,
-                                            change.position - dragLineOffsetStart,
-                                            relation = it[(index - 1) % lines.size].relation
-                                        )
-                                    }
-                                    it[(index + 1) % lines.size] = LineSegment(change.position - dragLineOffsetEnd , it[(index + 1) % lines.size].end, relation = it[(index + 1) % lines.size].relation)
-                                }
-                                points = points.toMutableList().also {
-                                    it[index] = change.position - dragLineOffsetStart
-                                    it[(index + 1) % points.size] = change.position - dragLineOffsetEnd
-                                }
-                            }
                             change.consume()
                         },
                         onDragEnd = {
-                            if(draggingLineIndex != null) {
-                                val index = draggingLineIndex!!
-                                lines = lines.toMutableList().also {
-                                    it[index] = LineSegment(it[index].start, it[index].end, Color.Black, 2F, it[index].relation)
-                                }
-                            }
+//                            if(draggingLineIndex != null) {
+//                                val index = draggingLineIndex!!
+//                                lines = lines.toMutableList().also {
+//                                    it[index] = LineSegment(it[index].start, it[index].end, Color.Black, 2F, it[index].relation)
+//                                }
+//                            }
                             draggingPointIndex = null
                             draggingLineIndex = null
                             dragOffset = Offset.Zero
@@ -272,22 +229,34 @@ fun CanvasToDrawView(
                 // Draw lines between points
                 if (lines.isNotEmpty()) {
                     for (i in 0 until lines.size) {
-                        drawBresenhamLine(
-                            color = lines[i].color,
-                            start = lines[i].start,
-                            end = lines[i].end,
-                            width = lines[i].strokeWidth
-                        )
-                        drawRelation(lines[i])
+                        if(lines[i].relation != Relations.Bezier) {
+                            drawBresenhamLine(
+                                color = lines[i].color,
+                                start = lines[i].start,
+                                end = lines[i].end,
+                                width = lines[i].strokeWidth
+                            )
+                            drawRelation(lines[i])
+                        }
+                        else {
+                            val cubicBezierSegment = lines[i].bezierSegment!!
+                            drawCubicBezier(cubicBezierSegment.start, cubicBezierSegment.control1, cubicBezierSegment.control2, cubicBezierSegment.end)
+                        }
                     }
                     if (isPolygonClosed) {
-                        drawBresenhamLine(
-                            color = Color.Green,
-                            start = lines.last().start,
-                            end = lines.last().end,
-                            width = lines.last().strokeWidth
-                        )
-                        drawRelation(lines.last())
+                        if(lines.last().relation != Relations.Bezier) {
+                            drawBresenhamLine(
+                                color = Color.Green,
+                                start = lines.last().start,
+                                end = lines.last().end,
+                                width = lines.last().strokeWidth
+                            )
+                            drawRelation(lines.last())
+                        }
+                        else {
+                            val cubicBezierSegment = lines.last().bezierSegment!!
+                            drawCubicBezier(cubicBezierSegment.start, cubicBezierSegment.control1, cubicBezierSegment.control2, cubicBezierSegment.end)
+                        }
                     }
                 }
 
@@ -317,23 +286,18 @@ fun CanvasToDrawView(
                 }
 
 
-                /* TESTOWE RYSOWANIE NA CANVASIE WŁĄSNYMI ALGORYTMAMI */
-
-                drawBresenhamLine(Offset(0.0F, 0.0F), Offset(200.0F, 200.0F), Color.Blue)
-
-                // Definicja punktów kontrolnych dla krzywej kubicznej Beziera
-                val start = Offset(50f, 300f)
-                val control1 = Offset(150f, 50f)
-                val control2 = Offset(250f, 500f)
-                val end = Offset(350f, 300f)
-
-                // Rysowanie przerywanego wieloboku kontrolnego
-                drawDashedLine(start, control1, Color.Gray)
-                drawDashedLine(control1, control2, Color.Gray)
-                drawDashedLine(control2, end, Color.Gray)
-
-                // Rysowanie krzywej kubicznej Beziera
-                drawCubicBezier(start, control1, control2, end, Color.Black)
+//                /* TESTOWE RYSOWANIE NA CANVASIE WŁĄSNYMI ALGORYTMAMI */
+//
+//                drawBresenhamLine(Offset(0.0F, 0.0F), Offset(200.0F, 200.0F), Color.Blue)
+//
+//                // Definicja punktów kontrolnych dla krzywej kubicznej Beziera
+//                val start = Offset(50f, 300f)
+//                val control1 = Offset(150f, 50f)
+//                val control2 = Offset(250f, 500f)
+//                val end = Offset(350f, 300f)
+//
+//                // Rysowanie krzywej kubicznej Beziera
+//                drawCubicBezier(start, control1, control2, end, Color.Black)
             }
         }
     }
