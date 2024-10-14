@@ -24,11 +24,13 @@ import androidx.compose.ui.input.pointer.isPrimaryPressed
 import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
+import org.example.project.algorithms.distancePointToLineSegment
 import org.example.project.algorithms.drawBresenhamLine
 import org.example.project.algorithms.drawCubicBezier
 import org.example.project.algorithms.drawDashedLine
-import org.example.project.algorithms3D.drawLine3D
-import org.example.project.algorithms3D.project3DTo2D
+import org.example.project.utils.LineSegment
+import org.example.project.utils.Relations
+import org.example.project.utils.drawRelation
 
 @Composable
 @Preview
@@ -45,7 +47,7 @@ fun App() {
 @Composable
 fun CanvasToDrawView(
     modifier: Modifier,
-    fieldColor: Color = Color.LightGray
+    fieldColor: Color = Color.White
 ) {
     var points by remember { mutableStateOf(emptyList<Offset>()) }
     var lines by remember { mutableStateOf(emptyList<LineSegment>()) }
@@ -57,13 +59,62 @@ fun CanvasToDrawView(
     var clickPosition by remember { mutableStateOf(Offset.Zero) }
 
     var draggingLineIndex by remember { mutableStateOf<Int?>(null) }
+    var selectedLineIndex by remember { mutableStateOf<Int?>(null) }
     var dragLineOffsetStart by remember { mutableStateOf(Offset.Zero) }
     var dragLineOffsetEnd by remember { mutableStateOf(Offset.Zero) }
 
     ContextMenuArea(items = {
         listOf(
-            ContextMenuItem("User-defined Action") {/*do nothing*/},
-            ContextMenuItem("Another user-defined action") {/*do something else*/}
+            ContextMenuItem("Ustal bok na pionowy") {
+                if(selectedLineIndex != null){
+                    val index = selectedLineIndex!!
+                    lines = lines.toMutableList().also {
+                        it[index] = LineSegment(start=it[index].start, end=it[index].end, relation=Relations.Vertical)
+                    }
+                    println("Ustalono linię ${index} na pionową!")
+                }
+                selectedLineIndex = null
+            },
+            ContextMenuItem("Ustal bok na poziomy") {
+                if(selectedLineIndex != null){
+                    val index = selectedLineIndex!!
+                    lines = lines.toMutableList().also {
+                        it[index] = LineSegment(start=it[index].start, end=it[index].end, relation=Relations.Horizontal)
+                    }
+                    println("Ustalono linię ${index} na poziomą!")
+                }
+                selectedLineIndex = null
+            },
+            ContextMenuItem("Ustal bok na stała długość") {
+                if(selectedLineIndex != null){
+                    val index = selectedLineIndex!!
+                    lines = lines.toMutableList().also {
+                        it[index] = LineSegment(start=it[index].start, end=it[index].end, relation=Relations.FixedLength)
+                    }
+                    println("Ustalono linię ${index} na stałą długość!")
+                }
+                selectedLineIndex = null
+            },
+            ContextMenuItem("Zrób z boku krzywą Beziera 3-go stopnia") {
+                if(selectedLineIndex != null){
+                    val index = selectedLineIndex!!
+                    lines = lines.toMutableList().also {
+                        it[index] = LineSegment(start=it[index].start, end=it[index].end, relation=Relations.Bezier)
+                    }
+                    println("Ustalono linię ${index} na segment Beziera 3-go stopnia!")
+                }
+                selectedLineIndex = null
+            },
+            ContextMenuItem("Usuń ograniczenia") {
+                if(selectedLineIndex != null){
+                    val index = selectedLineIndex!!
+                    lines = lines.toMutableList().also {
+                        it[index] = LineSegment(start=it[index].start, end=it[index].end, relation=Relations.None)
+                    }
+                    println("Usunięto ograniczenia z linii ${index}!")
+                }
+                selectedLineIndex = null
+            }
         )
     }) {
         Box(modifier = modifier.fillMaxSize()
@@ -97,7 +148,15 @@ fun CanvasToDrawView(
                     if (pointerEvent.buttons.isSecondaryPressed) {
                         println("Right mouse button clicked!")
                         clickPosition = pointerEvent.changes.first().position
+                        selectedLineIndex = lines.indexOfFirst {
+                            distancePointToLineSegment(
+                                offset,
+                                it.start,
+                                it.end
+                            ) < 20.dp.toPx()
+                        }.takeIf { it != -1 }
                         showContextMenu = true
+                        println("Selected line index: $selectedLineIndex")
                     }
                 }
             }
@@ -138,7 +197,8 @@ fun CanvasToDrawView(
                                                 it[index].start,
                                                 it[index].end,
                                                 Color.Blue,
-                                                4F
+                                                4F,
+                                                it[index].relation
                                             )
                                         }
                                         println("Line selected: $draggingLineIndex")
@@ -157,16 +217,16 @@ fun CanvasToDrawView(
                                         if(isPolygonClosed) {
                                             lines = lines.toMutableList().also {
                                                 it[lines.size - 1] =
-                                                    LineSegment(it[lines.size - 1].start, points[index])
-                                                it[index] = LineSegment(points[index], it[index].end)
+                                                    LineSegment(it[lines.size - 1].start, points[index], relation = it[lines.size - 1].relation)
+                                                it[index] = LineSegment(points[index], it[index].end, relation = it[index].relation)
                                             }
                                         }
                                     }
                                     else {
                                         lines = lines.toMutableList().also {
                                             it[index - 1] =
-                                                LineSegment(it[index - 1].start, points[index])
-                                            it[index] = LineSegment(points[index], it[index].end)
+                                                LineSegment(it[index - 1].start, points[index], relation = it[index - 1].relation)
+                                            it[index] = LineSegment(points[index], it[index].end, relation = it[index].relation)
                                         }
                                     }
                                 }
@@ -174,18 +234,19 @@ fun CanvasToDrawView(
                             if(draggingLineIndex != null && draggingPointIndex == null) {
                                 val index = draggingLineIndex!!
                                 lines = lines.toMutableList().also {
-                                    it[index] = LineSegment(change.position - dragLineOffsetStart, change.position - dragLineOffsetEnd, Color.Blue, 4F)
+                                    it[index] = LineSegment(change.position - dragLineOffsetStart, change.position - dragLineOffsetEnd, Color.Blue, 4F, it[index].relation)
                                     if(index == 0)
                                     {
-                                        it[lines.size - 1] = LineSegment(it[lines.size - 1].start, change.position - dragLineOffsetStart)
+                                        it[lines.size - 1] = LineSegment(it[lines.size - 1].start, change.position - dragLineOffsetStart, relation = it[lines.size - 1].relation)
                                     }
                                     else {
                                         it[(index - 1) % lines.size] = LineSegment(
                                             it[(index - 1) % lines.size].start,
-                                            change.position - dragLineOffsetStart
+                                            change.position - dragLineOffsetStart,
+                                            relation = it[(index - 1) % lines.size].relation
                                         )
                                     }
-                                    it[(index + 1) % lines.size] = LineSegment(change.position - dragLineOffsetEnd , it[(index + 1) % lines.size].end)
+                                    it[(index + 1) % lines.size] = LineSegment(change.position - dragLineOffsetEnd , it[(index + 1) % lines.size].end, relation = it[(index + 1) % lines.size].relation)
                                 }
                                 points = points.toMutableList().also {
                                     it[index] = change.position - dragLineOffsetStart
@@ -198,7 +259,7 @@ fun CanvasToDrawView(
                             if(draggingLineIndex != null) {
                                 val index = draggingLineIndex!!
                                 lines = lines.toMutableList().also {
-                                    it[index] = LineSegment(it[index].start, it[index].end, Color.Black, 2F)
+                                    it[index] = LineSegment(it[index].start, it[index].end, Color.Black, 2F, it[index].relation)
                                 }
                             }
                             draggingPointIndex = null
@@ -211,33 +272,22 @@ fun CanvasToDrawView(
                 // Draw lines between points
                 if (lines.isNotEmpty()) {
                     for (i in 0 until lines.size) {
-//                        drawLine(
-//                            color = lines[i].color,
-//                            start = lines[i].start,
-//                            end = lines[i].end,
-//                            strokeWidth = lines[i].strokeWidth.toPx()
-//                        )
                         drawBresenhamLine(
                             color = lines[i].color,
                             start = lines[i].start,
                             end = lines[i].end,
                             width = lines[i].strokeWidth
                         )
+                        drawRelation(lines[i])
                     }
                     if (isPolygonClosed) {
-                        // Draw the closing line if the polygon is closed
-//                        drawLine(
-//                            color = Color.Green,
-//                            start = lines.last().start,
-//                            end = lines.last().end,
-//                            strokeWidth = lines.last().strokeWidth.toPx()
-//                        )
                         drawBresenhamLine(
                             color = Color.Green,
                             start = lines.last().start,
                             end = lines.last().end,
                             width = lines.last().strokeWidth
                         )
+                        drawRelation(lines.last())
                     }
                 }
 
@@ -289,16 +339,3 @@ fun CanvasToDrawView(
     }
 }
 
-fun distancePointToLineSegment(point: Offset, start: Offset, end: Offset): Float {
-    val lineLengthSquared = (end.x - start.x) * (end.x - start.x) + (end.y - start.y) * (end.y - start.y)
-    if (lineLengthSquared == 0f) return (point - start).getDistance()
-    val t = ((point.x - start.x) * (end.x - start.x) + (point.y - start.y) * (end.y - start.y)) / lineLengthSquared
-    return if (t < 0) {
-        (point - start).getDistance()
-    } else if (t > 1) {
-        (point - end).getDistance()
-    } else {
-        val projection = Offset(start.x + t * (end.x - start.x), start.y + t * (end.y - start.y))
-        (point - projection).getDistance()
-    }
-}
