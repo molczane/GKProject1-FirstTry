@@ -12,6 +12,13 @@ import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.AlertDialog
+import androidx.compose.material.Button
+import androidx.compose.material.Text
+import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -24,6 +31,8 @@ import androidx.compose.ui.input.pointer.isPrimaryPressed
 import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.input.TextFieldValue
+import generateLineMenuItems
 import org.example.project.algorithms.calculateCubicBezierControlPoints
 import org.example.project.algorithms.distancePointToLineSegment
 import org.example.project.algorithms.drawBresenhamLine
@@ -65,6 +74,10 @@ fun CanvasToDrawView(
     var draggingLineIndex by remember { mutableStateOf<Int?>(null) }
     var selectedLineIndex by remember { mutableStateOf<Int?>(null) }
 
+    var showLengthWindow by remember { mutableStateOf(false) }
+    var inputText by remember { mutableStateOf(TextFieldValue("")) } // Przechowuje wartość tekstu
+    var selectedLength by remember { mutableStateOf<Float?>(null) } // Zapisuje wybraną długość boku
+
     ContextMenuArea(items = {
         val menuItems = mutableListOf<ContextMenuItem>()
         if(selectedLineIndex == null && selectedPointIndex == null) {
@@ -96,97 +109,16 @@ fun CanvasToDrawView(
         }
         if(selectedLineIndex != null) {
             val index = selectedLineIndex!!
-            val line = lines[index]
-            menuItems.add(ContextMenuItem("Dodaj punkt w środku linii") {
-                val midPoint = line.start.midpoint(line.end)
-                points = points.toMutableList().also {
-                    it.add(index + 1, midPoint)
-                }
-                lines = lines.toMutableList().also {
-                    val line = lines[index].copy()
-                    it[index] = LineSegment(
-                        start = it[index].start,
-                        end = midPoint,
-                        relation = Relations.None
-                    )
-                    it.add(index + 1, LineSegment(midPoint, line.end))
-                }
-            })
-            if(line.relation != Relations.Vertical) {
-                menuItems.add(
-                    ContextMenuItem("Ustal bok na pionowy") {
-                            lines = lines.toMutableList().also {
-                                it[index] = LineSegment(
-                                    start = it[index].start,
-                                    end = it[index].end,
-                                    relation = Relations.Vertical
-                                )
-                            }
-                            println("Ustalono linię ${index} na pionową!")
-                        selectedLineIndex = null
-                    }
-                )
-            }
-            if(line.relation != Relations.Horizontal) {
-                menuItems.add(ContextMenuItem("Ustal bok na poziomy") {
-                        lines = lines.toMutableList().also {
-                            it[index] = LineSegment(
-                                start = it[index].start,
-                                end = it[index].end,
-                                relation = Relations.Horizontal
-                            )
-                        }
-                        println("Ustalono linię ${index} na poziomą!")
-                    selectedLineIndex = null
-                }
-                )
-            }
-            if(line.relation != Relations.FixedLength) {
-                menuItems.add(ContextMenuItem("Ustal bok na stała długość") {
-                        lines = lines.toMutableList().also {
-                            it[index] = LineSegment(
-                                start = it[index].start,
-                                end = it[index].end,
-                                relation = Relations.FixedLength
-                            )
-                        }
-                        println("Ustalono linię ${index} na stałą długość!")
-                    selectedLineIndex = null
-                }
-                )
-            }
-            if(line.relation != Relations.Bezier) {
-                menuItems.add(ContextMenuItem("Zrób z boku krzywą Beziera 3-go stopnia") {
-                        lines = lines.toMutableList().also {
-                            it[index] = LineSegment(
-                                start = it[index].start,
-                                end = it[index].end,
-                                relation = Relations.Bezier,
-                                bezierSegment = calculateCubicBezierControlPoints(
-                                    it[index].start,
-                                    it[index].end
-                                )
-                            )
-                        }
-                        println("Ustalono linię ${index} na segment Beziera 3-go stopnia!")
-                    selectedLineIndex = null
-                }
-                )
-            }
-            if(line.relation != Relations.None) {
-                menuItems.add(ContextMenuItem("Usuń ograniczenia") {
-                        lines = lines.toMutableList().also {
-                            it[index] = LineSegment(
-                                start = it[index].start,
-                                end = it[index].end,
-                                relation = Relations.None
-                            )
-                        }
-                        println("Usunięto ograniczenia z linii ${index}!")
-                    selectedLineIndex = null
-                }
-                )
-            }
+            // Generowanie elementów menu
+            generateLineMenuItems(
+                selectedLineIndex = index,
+                lines = lines,
+                points = points,
+                onLinesChange = { lines = it },
+                onPointsChange = { points = it },
+                onShowLengthWindowChange = { showLengthWindow = it },
+                menuItems = menuItems
+            )
         }
         selectedLineIndex = null
         menuItems
@@ -355,6 +287,52 @@ fun CanvasToDrawView(
                 }
             }
         }
+    }
+
+    if(showLengthWindow) {
+        AlertDialog(
+            modifier = Modifier
+                .background(Color.White)
+                .width(300.dp)
+                .height(200.dp),
+            onDismissRequest = { showLengthWindow = false }, // Zamknięcie dialogu
+            title = { Text("Ustal długość boku") },
+            text = {
+                Column {
+                    Text("Wprowadź długość:")
+                    TextField(
+                        value = inputText,
+                        onValueChange = { inputText = it },
+                        label = { Text("Długość") }
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val enteredValue = inputText.text.toFloatOrNull()
+                        if (enteredValue != null) {
+                            selectedLength = enteredValue // Zapisujemy wprowadzaną długość
+                            showLengthWindow = false // Zamykamy dialog
+                        } else {
+                            // Obsługa błędu, np. wartość niepoprawna
+                            println("Wprowadź prawidłową liczbę!")
+                        }
+                    }
+                ) {
+                    Text("Zatwierdź")
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = {
+                        showLengthWindow = false // Zamknięcie dialogu bez zapisania wartości
+                    }
+                ) {
+                    Text("Anuluj")
+                }
+            }
+        )
     }
 }
 

@@ -17,8 +17,6 @@ fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBresenhamLine(start: Of
 
     while (true) {
         // Rysowanie pojedynczego punktu w obliczonym miejscu
-        //drawRect(color, topLeft = Offset(x0.toFloat(), y0.toFloat()), size = androidx.compose.ui.unit.IntSize(8, 8).toSize())
-
         drawCircle(color, radius = width, center = Offset(x0.toFloat(), y0.toFloat()))
 
         if (x0 == x1 && y0 == y1) break
