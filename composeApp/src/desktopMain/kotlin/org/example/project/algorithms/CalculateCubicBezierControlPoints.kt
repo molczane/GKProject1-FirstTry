@@ -8,7 +8,8 @@ fun calculateCubicBezierControlPoints(
     start: Offset,
     end: Offset,
     offsetFactor: Float = 0.3f,
-    perpendicularOffset: Float = 200f
+    perpendicularOffset: Float = 200f,
+    lineIndex: Int
 ): CubicBezierSegment {
     // 1. Calculate the direction vector from start to end
     val dx = end.x - start.x
@@ -19,7 +20,7 @@ fun calculateCubicBezierControlPoints(
 
     if (length == 0f) {
         // If the start and end points are the same, return the same points for all
-        return CubicBezierSegment(start, start, start, end)
+        return CubicBezierSegment(start, start, start, end, lineIndex)
     }
 
     // 3. Compute a perpendicular vector
@@ -39,5 +40,5 @@ fun calculateCubicBezierControlPoints(
         end.y - dy * offsetFactor - perpendicular.y * controlOffset
     )
 
-    return CubicBezierSegment(start, control1, control2, end)
+    return CubicBezierSegment(start, control1, control2, end, lineIndex)
 }

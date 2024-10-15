@@ -27,21 +27,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.isPrimaryPressed
-import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.input.TextFieldValue
 import generateLineMenuItems
-import org.example.project.algorithms.calculateCubicBezierControlPoints
-import org.example.project.algorithms.distancePointToLineSegment
 import org.example.project.algorithms.drawBresenhamLine
 import org.example.project.algorithms.drawCubicBezier
+import org.example.project.utils.CubicBezierSegment
 import org.example.project.utils.LineSegment
 import org.example.project.utils.Relations
 import org.example.project.utils.drawRelation
 import org.example.project.utils.handleClickEvents
-import org.example.project.utils.midpoint
 
 @Composable
 @Preview
@@ -79,6 +75,9 @@ fun CanvasToDrawView(
     var inputText by remember { mutableStateOf(TextFieldValue("")) } // Przechowuje wartość tekstu
     var selectedLength by remember { mutableStateOf<Float?>(null) } // Zapisuje wybraną długość boku
 
+    var bezierSegments by remember { mutableStateOf(emptyList<CubicBezierSegment>()) }
+    var bezierControlPoints by remember { mutableStateOf(emptyList<Offset>()) }
+
     ContextMenuArea(items = {
         val menuItems = mutableListOf<ContextMenuItem>()
         if(selectedLineIndex == null && selectedPointIndex == null) {
@@ -115,9 +114,13 @@ fun CanvasToDrawView(
                 selectedLineIndex = index,
                 lines = lines,
                 points = points,
+                bezierSegments = bezierSegments,
+                bezierControlPoints = bezierControlPoints,
                 onLinesChange = { lines = it },
                 onPointsChange = { points = it },
                 onShowLengthWindowChange = { showLengthWindow = it },
+                onBezierSegmentsChange = { bezierSegments = it },
+                onBezierControlPointsChange = { bezierControlPoints = it },
                 menuItems = menuItems
             )
         }
@@ -311,4 +314,3 @@ fun CanvasToDrawView(
         )
     }
 }
-

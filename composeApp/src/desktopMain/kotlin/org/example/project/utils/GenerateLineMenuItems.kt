@@ -2,6 +2,7 @@ import androidx.compose.foundation.ContextMenuItem
 import androidx.compose.runtime.*
 import androidx.compose.ui.geometry.Offset
 import org.example.project.algorithms.calculateCubicBezierControlPoints
+import org.example.project.utils.CubicBezierSegment
 import org.example.project.utils.LineSegment
 import org.example.project.utils.Relations
 import org.example.project.utils.midpoint
@@ -10,9 +11,13 @@ fun generateLineMenuItems(
     selectedLineIndex: Int?,
     lines: List<LineSegment>,
     points: List<Offset>,
+    bezierSegments: List<CubicBezierSegment>,
+    bezierControlPoints: List<Offset>,
     onLinesChange: (List<LineSegment>) -> Unit,
     onPointsChange: (List<Offset>) -> Unit,
     onShowLengthWindowChange: (Boolean) -> Unit,
+    onBezierSegmentsChange: (List<CubicBezierSegment>) -> Unit,
+    onBezierControlPointsChange: (List<Offset>) -> Unit,
     menuItems: MutableList<ContextMenuItem>
 ) {
     if (selectedLineIndex != null) {
@@ -96,8 +101,9 @@ fun generateLineMenuItems(
                         end = it[index].end,
                         relation = Relations.Bezier,
                         bezierSegment = calculateCubicBezierControlPoints(
-                            it[index].start,
-                            it[index].end
+                            start = it[index].start,
+                            end = it[index].end,
+                            lineIndex = index
                         )
                     )
                 }

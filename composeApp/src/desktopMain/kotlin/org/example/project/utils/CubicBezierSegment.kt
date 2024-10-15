@@ -6,5 +6,6 @@ data class CubicBezierSegment(
     val start: Offset,
     val control1: Offset,
     val control2: Offset,
-    val end: Offset
+    val end: Offset,
+    val lineIndex: Int
 )
