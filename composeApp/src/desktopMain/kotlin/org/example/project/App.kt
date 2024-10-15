@@ -40,6 +40,7 @@ import org.example.project.algorithms.drawCubicBezier
 import org.example.project.utils.LineSegment
 import org.example.project.utils.Relations
 import org.example.project.utils.drawRelation
+import org.example.project.utils.handleClickEvents
 import org.example.project.utils.midpoint
 
 @Composable
@@ -126,50 +127,25 @@ fun CanvasToDrawView(
         Box(modifier = modifier.fillMaxSize()
             .background(fieldColor)
             .onPointerEvent(PointerEventType.Press) { pointerEvent ->
-                // Sprawdź stan przycisków myszy w zdarzeniu
-                val offset = pointerEvent.changes.firstOrNull()?.position
-                if (offset != null) {
-                    if (pointerEvent.buttons.isPrimaryPressed) {
-                        println("Left mouse button clicked!")
-                        if (!isPolygonClosed) {
-                            draggingPointIndex = points.indexOfFirst {
-                                (offset - it).getDistance() < 20.dp.toPx()
-                            }.takeIf { it != -1 }
-                            if (points.isNotEmpty() && (offset - points.first()).getDistance() < 20.dp.toPx()) {
-                                // If the new point is close to the first point, close the polygon
-                                lines = lines + LineSegment(points.last(), points.first())
-                                isPolygonClosed = true
-                            } else if (draggingPointIndex == null) {
-                                var newLineSegment: LineSegment? = null
-                                points = points + offset
-                                if (points.size > 1) {
-                                    lines = lines + LineSegment(points[points.size - 2], points.last())
-                                    newLineSegment = LineSegment(points[points.size - 2], points.last())
-                                }
-                                println("New point added: $offset!")
-                                println("New line added: $newLineSegment")
-                            }
-                        }
-                    }
-                    if (pointerEvent.buttons.isSecondaryPressed) {
-                        println("Right mouse button clicked!")
-                        clickPosition = pointerEvent.changes.first().position
-                        selectedPointIndex = points.indexOfFirst {
-                            (offset - it).getDistance() < 20.dp.toPx()
-                        }.takeIf { it != -1 }
-                        if(selectedPointIndex == null) {
-                            selectedLineIndex = lines.indexOfFirst {
-                                distancePointToLineSegment(
-                                    offset,
-                                    it.start,
-                                    it.end
-                                ) < 20.dp.toPx()
-                            }.takeIf { it != -1 }
-                        }
-                        showContextMenu = true
-                        println("Selected line index: $selectedLineIndex")
-                    }
-                }
+                handleClickEvents(
+                    pointerEvent,
+                    points,
+                    lines,
+                    isPolygonClosed,
+                    draggingPointIndex,
+                    selectedPointIndex,
+                    selectedLineIndex,
+                    showContextMenu,
+                    clickPosition,
+                    onPointsChange = { points = it },
+                    onLinesChange = { lines = it },
+                    onPolygonClosedChange = { isPolygonClosed = it },
+                    onDraggingPointChange = { draggingPointIndex = it },
+                    onSelectedPointChange = { selectedPointIndex = it },
+                    onSelectedLineChange = { selectedLineIndex = it },
+                    onShowContextMenuChange = { showContextMenu = it },
+                    onClickPositionChange = { clickPosition = it }
+                )
             }
         ) {
             Canvas(modifier = Modifier
