@@ -3,6 +3,7 @@ package org.example.project.algorithms
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.unit.dp
 import kotlin.math.pow
 
 // Funkcja rysująca krzywą kubiczną Beziera
@@ -15,6 +16,18 @@ fun DrawScope.drawCubicBezier(start: Offset, control1: Offset, control2: Offset,
     drawDashedLine(control1, control2, Color.Gray)
     drawDashedLine(control2, end, Color.Gray)
     drawDashedLine(start, end, Color.Gray)
+
+    // Rysowanie punktów kontrolnych
+    drawCircle(
+        color = Color.Blue,
+        center = control1,
+        radius = 3.dp.toPx()
+    )
+    drawCircle(
+        color = Color.Blue,
+        center = control2,
+        radius = 3.dp.toPx()
+    )
 
     for (i in 1..steps) {
         val t = i / steps.toFloat()

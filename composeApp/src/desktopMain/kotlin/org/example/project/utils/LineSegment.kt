@@ -4,10 +4,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 
 data class LineSegment(
-    val start: Offset,
-    val end: Offset,
-    val color: Color = Color.Black,
-    val strokeWidth: Float = 2F,
-    val relation: Relations = Relations.None,
-    val bezierSegment: CubicBezierSegment? = null
+    var start: Offset,
+    var end: Offset,
+    var color: Color = Color.Black,
+    var strokeWidth: Float = 2F,
+    var relation: Relations = Relations.None,
+    var bezierSegment: CubicBezierSegment? = null
 )

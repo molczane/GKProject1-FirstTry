@@ -5,6 +5,6 @@ import androidx.compose.ui.graphics.Color
 
 data class PointClass(
     val offset: Offset,
-    val color: Color,
-    val radius: Float
+    val color: Color = Color.Red,
+    val radius: Float = 4F
 )

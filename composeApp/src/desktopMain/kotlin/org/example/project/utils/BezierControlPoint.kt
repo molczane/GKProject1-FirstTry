@@ -4,7 +4,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 
 data class BezierControlPoint(
-    val offset: Offset,
-    val color: Color,
-    val radius: Float
+    var offset: Offset,
+    var color: Color = Color.Blue,
+    var radius: Float = 4F,
+    var lineIndex: Int,
+    var index: Int
 )

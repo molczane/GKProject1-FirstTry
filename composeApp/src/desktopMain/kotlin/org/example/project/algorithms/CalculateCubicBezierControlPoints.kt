@@ -4,7 +4,7 @@ import androidx.compose.ui.geometry.Offset
 import org.example.project.utils.CubicBezierSegment
 import kotlin.math.sqrt
 
-fun calculateCubicBezierControlPoints(
+fun calculateCubicBezierSegment(
     start: Offset,
     end: Offset,
     offsetFactor: Float = 0.3f,

@@ -1,7 +1,7 @@
 import androidx.compose.foundation.ContextMenuItem
-import androidx.compose.runtime.*
 import androidx.compose.ui.geometry.Offset
-import org.example.project.algorithms.calculateCubicBezierControlPoints
+import org.example.project.algorithms.calculateCubicBezierSegment
+import org.example.project.utils.BezierControlPoint
 import org.example.project.utils.CubicBezierSegment
 import org.example.project.utils.LineSegment
 import org.example.project.utils.Relations
@@ -12,12 +12,12 @@ fun generateLineMenuItems(
     lines: List<LineSegment>,
     points: List<Offset>,
     bezierSegments: List<CubicBezierSegment>,
-    bezierControlPoints: List<Offset>,
+    bezierControlPoints: List<BezierControlPoint>,
     onLinesChange: (List<LineSegment>) -> Unit,
     onPointsChange: (List<Offset>) -> Unit,
     onShowLengthWindowChange: (Boolean) -> Unit,
     onBezierSegmentsChange: (List<CubicBezierSegment>) -> Unit,
-    onBezierControlPointsChange: (List<Offset>) -> Unit,
+    onBezierControlPointsChange: (List<BezierControlPoint>) -> Unit,
     menuItems: MutableList<ContextMenuItem>
 ) {
     if (selectedLineIndex != null) {
@@ -95,18 +95,29 @@ fun generateLineMenuItems(
         // Zrób z boku krzywą Beziera 3-go stopnia
         if (line.relation != Relations.Bezier) {
             menuItems.add(ContextMenuItem("Zrób z boku krzywą Beziera 3-go stopnia") {
+                val bezierSegment = calculateCubicBezierSegment(start = line.start,
+                    end = line.end,
+                    lineIndex = index
+                )
                 val updatedLines = lines.toMutableList().also {
                     it[index] = LineSegment(
                         start = it[index].start,
                         end = it[index].end,
                         relation = Relations.Bezier,
-                        bezierSegment = calculateCubicBezierControlPoints(
-                            start = it[index].start,
-                            end = it[index].end,
-                            lineIndex = index
-                        )
+                        bezierSegment = bezierSegment
                     )
                 }
+                val updatedBezierSegments = bezierSegments.toMutableList().also {
+                    it.add(bezierSegment)
+                }
+                var bezierControlPoint1 = BezierControlPoint(offset = bezierSegment.control1, lineIndex = index, index = 1)
+                var bezierControlPoint2 = BezierControlPoint(offset = bezierSegment.control2, lineIndex = index, index = 2)
+                val updatedBezierControlPoints = bezierControlPoints.toMutableList().also {
+                    it.add(bezierControlPoint1)
+                    it.add(bezierControlPoint2)
+                }
+                onBezierControlPointsChange(updatedBezierControlPoints)
+                onBezierSegmentsChange(updatedBezierSegments)
                 onLinesChange(updatedLines)
                 println("Ustalono linię $index na segment Beziera 3-go stopnia!")
             })
