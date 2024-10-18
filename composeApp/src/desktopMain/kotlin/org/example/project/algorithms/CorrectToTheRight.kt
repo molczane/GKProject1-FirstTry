@@ -22,28 +22,34 @@ fun correctToTheRight(
     var currentOffset = dragAmount
     var indexCurrent = index
     while(true) {
-        // Firstly, adjusting points list
-        val updatedPoints = points.toMutableList().also {
-            it[indexCurrent] = it[indexCurrent] + currentOffset
-        }
-        onPointsChange(updatedPoints)
-
         // Secondly, adjusting lines list
         when(lines[indexCurrent].relation) {
             Relations.None -> {
+                val updatedPoints = points.toMutableList().also {
+                    it[indexCurrent] = it[indexCurrent] + currentOffset
+                }
+
                 val updatedLines = lines.toMutableList().also {
                     it[indexCurrent] = LineSegment(
-                        points[indexCurrent],
+                        updatedPoints[indexCurrent],
                         it[indexCurrent].end,
                         relation = it[indexCurrent].relation
                     )
                 }
+
+                onPointsChange(updatedPoints)
                 onLinesChange(updatedLines)
                 break
             }
             Relations.Bezier -> {
                 val updatedLines = lines.toMutableList().also {
-                    val newControlPoint = calculateNewControlPointC1(it[indexCurrent - 1].start, points[indexCurrent])
+                    val updatedPoints = points.toMutableList().also {
+                        it[indexCurrent] = it[indexCurrent] + currentOffset
+                    }
+
+                    onPointsChange(updatedPoints)
+
+                    val newControlPoint = calculateNewControlPointC1(it[if(indexCurrent == 0) lines.size - 1 else indexCurrent - 1].start, points[indexCurrent])
                     it[indexCurrent] = LineSegment( points[indexCurrent], it[indexCurrent].end, relation = it[indexCurrent].relation,
                         bezierSegment = CubicBezierSegment(
                             points[indexCurrent],
@@ -58,18 +64,31 @@ fun correctToTheRight(
                 break
             }
             Relations.Vertical -> {
+                val updatedPoints = points.toMutableList().also {
+                    it[indexCurrent] = it[indexCurrent] + currentOffset
+                }
+
+                onPointsChange(updatedPoints)
+
                 val updatedLines = lines.toMutableList().also {
                     it[indexCurrent] = LineSegment(
-                        points[indexCurrent],
-                        it[indexCurrent].end + Offset(dragAmount.x, 0F),
+                        start = points[indexCurrent],
+                        end = it[indexCurrent].end + Offset(currentOffset.x, 0F),
                         relation = it[indexCurrent].relation
                     )
                 }
+
                 onLinesChange(updatedLines)
-                currentOffset = Offset(dragAmount.x, 0F)
+                currentOffset = Offset(currentOffset.x, 0F)
                 indexCurrent = (indexCurrent + 1)%lines.size
             }
             Relations.Horizontal -> {
+                val updatedPoints = points.toMutableList().also {
+                    it[indexCurrent] = it[indexCurrent] + currentOffset
+                }
+
+                onPointsChange(updatedPoints)
+
                 val updatedLines = lines.toMutableList().also {
                     it[indexCurrent] = LineSegment(
                         points[indexCurrent],
@@ -82,6 +101,12 @@ fun correctToTheRight(
                 indexCurrent = (indexCurrent + 1)%lines.size
             }
             Relations.FixedLength -> {
+                val updatedPoints = points.toMutableList().also {
+                    it[indexCurrent] = it[indexCurrent] + currentOffset
+                }
+
+                onPointsChange(updatedPoints)
+
                 val updatedLines = lines.toMutableList().also {
                     it[indexCurrent] = LineSegment(
                         points[indexCurrent],
