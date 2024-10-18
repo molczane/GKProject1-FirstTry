@@ -4,6 +4,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.isPrimaryPressed
 import androidx.compose.ui.input.pointer.isSecondaryPressed
+import androidx.compose.ui.unit.dp
 import org.example.project.algorithms.distancePointToLineSegment
 
 // Przeniesiona obsługa zdarzeń wskaźnika

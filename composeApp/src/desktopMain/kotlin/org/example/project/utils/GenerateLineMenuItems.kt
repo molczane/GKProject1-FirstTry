@@ -1,6 +1,7 @@
 import androidx.compose.foundation.ContextMenuItem
 import androidx.compose.ui.geometry.Offset
 import org.example.project.algorithms.calculateCubicBezierSegment
+import org.example.project.algorithms.correctToTheRight
 import org.example.project.utils.BezierControlPoint
 import org.example.project.utils.CubicBezierSegment
 import org.example.project.utils.LineSegment
@@ -48,13 +49,21 @@ fun generateLineMenuItems(
         if (line.relation != Relations.Vertical) {
             menuItems.add(
                 ContextMenuItem("Ustal bok na pionowy") {
+                    val offset = Offset(line.start.x - line.end.x, 0F)
                     val updatedLines = lines.toMutableList().also {
                         it[index] = LineSegment(
                             start = it[index].start,
-                            end = it[index].end,
+                            end = Offset(it[index].start.x, it[index].end.y),
                             relation = Relations.Vertical
                         )
                     }
+//                    correctToTheRight(
+//                        index = index,
+//                        dragAmount = offset,
+//                        lines = updatedLines,
+//                        points = points,
+//                        bezierSegments = bezierSegments,
+//                    )
                     onLinesChange(updatedLines)
                     println("Ustalono linię $index na pionową!")
                 }
@@ -97,7 +106,9 @@ fun generateLineMenuItems(
             menuItems.add(ContextMenuItem("Zrób z boku krzywą Beziera 3-go stopnia") {
                 val bezierSegment = calculateCubicBezierSegment(start = line.start,
                     end = line.end,
-                    lineIndex = index
+                    lineIndex = index,
+                    previousLineSegment = lines[index - 1],
+                    nextLineSegment = lines [index + 1]
                 )
                 val updatedLines = lines.toMutableList().also {
                     it[index] = LineSegment(

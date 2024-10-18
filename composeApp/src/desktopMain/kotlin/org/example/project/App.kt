@@ -31,6 +31,7 @@ import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.input.TextFieldValue
 import generateLineMenuItems
+import org.example.project.algorithms.calculateNewControlPointC1
 import org.example.project.algorithms.drawBresenhamLine
 import org.example.project.algorithms.drawCubicBezier
 import org.example.project.utils.BezierControlPoint
@@ -179,10 +180,13 @@ fun CanvasToDrawView(
                                 }
                             }
                         },
-                        onDrag = { change, _ ->
+                        onDrag = { change, dragAmount ->
                             if (draggingPointIndex != null) {
                                 val index = draggingPointIndex!!
-                                (points as MutableList<Offset>)[index] = change.position - dragOffset
+                                //(points as MutableList<Offset>)[index] = change.position - dragOffset
+                                (points as MutableList<Offset>)[index] = points[index] + dragAmount
+                                val offsetX = dragAmount.x
+                                val offsetY = dragAmount.y
                                 if(lines.isNotEmpty()) {
                                     if(index == 0) {
                                         if(isPolygonClosed) {
@@ -196,11 +200,12 @@ fun CanvasToDrawView(
                                     else {
                                         lines = lines.toMutableList().also {
                                             if(it[index - 1].relation == Relations.Bezier) {
+                                                val newControlPoint = calculateNewControlPointC1(it[index].end, points[index])
                                                 it[index - 1] = LineSegment(it[index - 1].start, points[index], relation = it[index - 1].relation,
                                                     bezierSegment = CubicBezierSegment(
                                                         it[index - 1].bezierSegment!!.start,
                                                         it[index - 1].bezierSegment!!.control1,
-                                                        it[index - 1].bezierSegment!!.control2,
+                                                        newControlPoint,
                                                         points[index],
                                                         index - 1
                                                     )
@@ -212,6 +217,7 @@ fun CanvasToDrawView(
                                                 )
                                             }
                                             else if(it[index].relation == Relations.Bezier) {
+                                                val newControlPoint = calculateNewControlPointC1(it[index - 1].start, points[index])
                                                 it[index - 1] =
                                                     LineSegment(
                                                         it[index - 1].start,
@@ -221,7 +227,7 @@ fun CanvasToDrawView(
                                                 it[index] = LineSegment( points[index], it[index].end, relation = it[index].relation,
                                                     bezierSegment = CubicBezierSegment(
                                                         points[index],
-                                                        it[index].bezierSegment!!.control1,
+                                                        newControlPoint,
                                                         it[index].bezierSegment!!.control2,
                                                         it[index].bezierSegment!!.end,
                                                         index

@@ -2,6 +2,7 @@ package org.example.project.algorithms
 
 import androidx.compose.ui.geometry.Offset
 import org.example.project.utils.CubicBezierSegment
+import org.example.project.utils.LineSegment
 import kotlin.math.sqrt
 
 fun calculateCubicBezierSegment(
@@ -9,36 +10,52 @@ fun calculateCubicBezierSegment(
     end: Offset,
     offsetFactor: Float = 0.3f,
     perpendicularOffset: Float = 200f,
-    lineIndex: Int
+    lineIndex: Int,
+    previousLineSegment: LineSegment,
+    nextLineSegment: LineSegment
 ): CubicBezierSegment {
-    // 1. Calculate the direction vector from start to end
-    val dx = end.x - start.x
-    val dy = end.y - start.y
+    val previousDirection = previousLineSegment.end.let { (it - previousLineSegment.start).normalize() }
+    val nextDirection = nextLineSegment.start.let { (it - nextLineSegment.end).normalize() }
 
-    // 2. Calculate the length of the direction vector
-    val length = sqrt(dx * dx + dy * dy)
+    val previousLineLength = (previousLineSegment.start - previousLineSegment.end).getDistance()
+    val nextLineLength = (nextLineSegment.start - nextLineSegment.end).getDistance()
 
-    if (length == 0f) {
-        // If the start and end points are the same, return the same points for all
-        return CubicBezierSegment(start, start, start, end, lineIndex)
+    // Ustawienie pierwszego punktu kontrolnego zgodnie z kierunkiem poprzedniej krawędzi
+    val control1 = if (previousDirection != null) {
+        start + previousDirection * previousLineLength/3F  // Można dostosować długość
+    } else {
+        start + (end - start).normalize() * previousLineLength/3F
     }
 
-    // 3. Compute a perpendicular vector
-    val perpendicular = Offset(-dy / length, dx / length)
-
-    // 4. Define the offset magnitude for control points
-    val controlOffset = perpendicularOffset
-
-    // 5. Calculate the control points
-    val control1 = Offset(
-        start.x + dx * offsetFactor + perpendicular.x * controlOffset,
-        start.y + dy * offsetFactor + perpendicular.y * controlOffset
-    )
-
-    val control2 = Offset(
-        end.x - dx * offsetFactor - perpendicular.x * controlOffset,
-        end.y - dy * offsetFactor - perpendicular.y * controlOffset
-    )
+    // Ustawienie drugiego punktu kontrolnego zgodnie z kierunkiem następnej krawędzi
+    val control2 = if (nextDirection != null) {
+        end + nextDirection * nextLineLength/3F  // Można dostosować długość
+    } else {
+        end + (end - start).normalize() * nextLineLength/3F
+    }
 
     return CubicBezierSegment(start, control1, control2, end, lineIndex)
+}
+
+fun calculateNewControlPointC1(
+    start: Offset,
+    end: Offset
+) : Offset{
+    val direction = (end - start).normalize()
+    val length = (end - start).getDistance()
+
+    return end + (end - start).normalize() * (length/3)
+}
+
+// Funkcja do normalizacji wektora (Offset)
+fun Offset.normalize(): Offset {
+    // Oblicz długość wektora
+    val length = sqrt(x * x + y * y)
+
+    // Sprawdzamy, czy długość jest większa niż zero, aby uniknąć dzielenia przez zero
+    return if (length > 0f) {
+        Offset(x / length, y / length)
+    } else {
+        Offset.Zero // Zwracamy wektor zerowy, jeśli długość wynosi 0
+    }
 }
