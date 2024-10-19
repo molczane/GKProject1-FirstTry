@@ -31,7 +31,7 @@ import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.input.TextFieldValue
 import generateLineMenuItems
-import org.example.project.algorithms.calculateNewControlPointC1
+import org.example.project.algorithms.calculateEndPointFixedLength
 import org.example.project.algorithms.correctToTheLeft
 import org.example.project.algorithms.correctToTheRight
 import org.example.project.algorithms.drawBresenhamLine
@@ -82,6 +82,8 @@ fun CanvasToDrawView(
     var bezierControlPoints by remember { mutableStateOf(emptyList<BezierControlPoint>()) }
     var draggingBezierControlPointIndex by remember { mutableStateOf<Int?>(null) }
 
+    var fixedLengthLineIndex by remember { mutableStateOf<Int?>(null) }
+
     ContextMenuArea(items = {
         val menuItems = mutableListOf<ContextMenuItem>()
         if(selectedLineIndex == null && selectedPointIndex == null) {
@@ -120,11 +122,13 @@ fun CanvasToDrawView(
                 points = points,
                 bezierSegments = bezierSegments,
                 bezierControlPoints = bezierControlPoints,
+                fixedLengthLineIndex = fixedLengthLineIndex,
                 onLinesChange = { lines = it },
                 onPointsChange = { points = it },
                 onShowLengthWindowChange = { showLengthWindow = it },
                 onBezierSegmentsChange = { bezierSegments = it },
                 onBezierControlPointsChange = { bezierControlPoints = it },
+                onFixedLengthLineIndexChange = { fixedLengthLineIndex = it },
                 menuItems = menuItems
             )
         }
@@ -185,14 +189,12 @@ fun CanvasToDrawView(
                         onDrag = { change, dragAmount ->
                             if (draggingPointIndex != null) {
                                 val index = draggingPointIndex!!
-                                //(points as MutableList<Offset>)[index] = change.position - dragOffset
-                                //(points as MutableList<Offset>)[index] = points[index] + dragAmount
                                 if(lines.isNotEmpty()) {
                                     correctToTheRight(
                                         index,
                                         dragAmount,
-                                        lines = lines,
-                                        points = points,
+                                        lineSegmentsIn = lines,
+                                        pointsListIn = points,
                                         bezierSegments = bezierSegments,
                                         bezierControlPoints = bezierControlPoints,
                                         onPointsChange = { points = it },
@@ -203,8 +205,8 @@ fun CanvasToDrawView(
                                     correctToTheLeft(
                                         if(index == 0) lines.size - 1 else index - 1,
                                         dragAmount,
-                                        lines = lines,
-                                        points = points,
+                                        lineSegmentsIn = lines,
+                                        pointsListIn = points,
                                         bezierSegments = bezierSegments,
                                         bezierControlPoints = bezierControlPoints,
                                         onPointsChange = { points = it },
@@ -212,67 +214,6 @@ fun CanvasToDrawView(
                                         onBezierSegmentsChange = { bezierSegments = it },
                                         onBezierControlPointsChange = { bezierControlPoints = it }
                                     )
-//                                    if(index == 0) {
-//                                        if(isPolygonClosed) {
-//                                            lines = lines.toMutableList().also {
-//                                                it[lines.size - 1] =
-//                                                    LineSegment(it[lines.size - 1].start, points[index], relation = it[lines.size - 1].relation)
-//                                                it[index] = LineSegment(points[index], it[index].end, relation = it[index].relation)
-//                                            }
-//                                        }
-//                                    }
-//                                    else {
-//                                        lines = lines.toMutableList().also {
-//                                            if(it[index - 1].relation == Relations.Bezier) {
-//                                                val newControlPoint = calculateNewControlPointC1(it[index].end, points[index])
-//                                                it[index - 1] = LineSegment(it[index - 1].start, points[index], relation = it[index - 1].relation,
-//                                                    bezierSegment = CubicBezierSegment(
-//                                                        it[index - 1].bezierSegment!!.start,
-//                                                        it[index - 1].bezierSegment!!.control1,
-//                                                        newControlPoint,
-//                                                        points[index],
-//                                                        index - 1
-//                                                    )
-//                                                )
-//                                                it[index] = LineSegment(
-//                                                    points[index],
-//                                                    it[index].end,
-//                                                    relation = it[index].relation
-//                                                )
-//                                            }
-//                                            else if(it[index].relation == Relations.Bezier) {
-//                                                val newControlPoint = calculateNewControlPointC1(it[index - 1].start, points[index])
-//                                                it[index - 1] =
-//                                                    LineSegment(
-//                                                        it[index - 1].start,
-//                                                        points[index],
-//                                                        relation = it[index - 1].relation
-//                                                    )
-//                                                it[index] = LineSegment( points[index], it[index].end, relation = it[index].relation,
-//                                                    bezierSegment = CubicBezierSegment(
-//                                                        points[index],
-//                                                        newControlPoint,
-//                                                        it[index].bezierSegment!!.control2,
-//                                                        it[index].bezierSegment!!.end,
-//                                                        index
-//                                                    )
-//                                                )
-//                                            }
-//                                            else {
-//                                                it[index - 1] =
-//                                                    LineSegment(
-//                                                        it[index - 1].start,
-//                                                        points[index],
-//                                                        relation = it[index - 1].relation
-//                                                    )
-//                                                it[index] = LineSegment(
-//                                                    points[index],
-//                                                    it[index].end,
-//                                                    relation = it[index].relation
-//                                                )
-//                                            }
-//                                        }
-//                                    }
                                 }
                             }
                             if(draggingBezierControlPointIndex != null) {
@@ -338,7 +279,7 @@ fun CanvasToDrawView(
                     }
                 }
 
-                if(points.size != 0) {
+                if(points.size == 1) {
                     // Draw points
                     points.forEach { point ->
                         drawCircle(
@@ -389,7 +330,24 @@ fun CanvasToDrawView(
                     onClick = {
                         val enteredValue = inputText.text.toFloatOrNull()
                         if (enteredValue != null) {
-                            selectedLength = enteredValue // Zapisujemy wprowadzaną długość
+                            selectedLength = enteredValue// Zapisujemy wprowadzaną długość
+                            val newEndPoint = calculateEndPointFixedLength(lines[fixedLengthLineIndex!!].start, lines[fixedLengthLineIndex!!].end, enteredValue)
+                            val offset = newEndPoint - lines[fixedLengthLineIndex!!].end
+                            lines = lines.toMutableList().also {
+                                it[fixedLengthLineIndex!!] = LineSegment(start = lines[fixedLengthLineIndex!!].start, end = newEndPoint, relation = lines[fixedLengthLineIndex!!].relation)
+                            }
+                            correctToTheRight(
+                                (fixedLengthLineIndex!! + 1)%lines.size,
+                                offset,
+                                lineSegmentsIn = lines,
+                                pointsListIn = points,
+                                bezierSegments = bezierSegments,
+                                bezierControlPoints = bezierControlPoints,
+                                onPointsChange = { points = it },
+                                onLinesChange = { lines = it },
+                                onBezierSegmentsChange = { bezierSegments = it },
+                                onBezierControlPointsChange = { bezierControlPoints = it }
+                            )
                             showLengthWindow = false // Zamykamy dialog
                         } else {
                             // Obsługa błędu, np. wartość niepoprawna
