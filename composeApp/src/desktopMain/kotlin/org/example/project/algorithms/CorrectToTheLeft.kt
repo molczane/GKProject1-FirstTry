@@ -28,12 +28,31 @@ fun correctToTheLeft(
         // Secondly, adjusting lines list
         when(lineSegments[indexCurrent].relation) {
             Relations.None -> {
-                val updatedLines = lineSegments.toMutableList().also {
+                var updatedLines = lineSegments.toMutableList().also {
                     it[indexCurrent] = LineSegment(
                         pointsList[indexCurrent],
                         pointsList[(indexCurrent + 1)%lineSegments.size],
                         relation = it[indexCurrent].relation
                     )
+                }
+
+                val previousIndex = if(indexCurrent == 0) lineSegments.size - 1 else indexCurrent - 1
+                if(lineSegments[previousIndex].relation == Relations.Bezier) {
+                    updatedLines = updatedLines.also {
+                        val newControlPoint = calculateNewControlPointC1(it[indexCurrent].end, it[indexCurrent].start)
+                        it[previousIndex] = LineSegment(
+                            it[previousIndex].start,
+                            it[previousIndex].end,
+                            relation = it[previousIndex].relation,
+                            bezierSegment = CubicBezierSegment(
+                                it[previousIndex].start,
+                                it[previousIndex].bezierSegment!!.control1,
+                                newControlPoint,
+                                it[previousIndex].bezierSegment!!.end,
+                                previousIndex
+                            )
+                        )
+                    }
                 }
 
                 lineSegments = updatedLines

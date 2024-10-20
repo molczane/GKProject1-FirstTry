@@ -1,11 +1,14 @@
 package org.example.project.utils
 
+import OffsetSerializer
 import androidx.compose.ui.geometry.Offset
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class CubicBezierSegment(
-    var start: Offset,
-    var control1: Offset,
-    var control2: Offset,
-    var end: Offset,
+    @Serializable(with = OffsetSerializer::class) var start: Offset,
+    @Serializable(with = OffsetSerializer::class) var control1: Offset,
+    @Serializable(with = OffsetSerializer::class) var control2: Offset,
+    @Serializable(with = OffsetSerializer::class) var end: Offset,
     var lineIndex: Int
 )

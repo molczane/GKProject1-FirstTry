@@ -1,5 +1,6 @@
 package org.example.project
 
+import OffsetSerializer
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ContextMenuArea
 import androidx.compose.foundation.ContextMenuItem
@@ -12,9 +13,15 @@ import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.AlertDialog
 import androidx.compose.material.Button
 import androidx.compose.material.Text
@@ -25,12 +32,28 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.Key.Companion.Menu
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.input.TextFieldValue
+
 import generateLineMenuItems
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import modifyListParallel
+
 import org.example.project.algorithms.calculateEndPointFixedLength
 import org.example.project.algorithms.correctToTheLeft
 import org.example.project.algorithms.correctToTheRight
@@ -42,6 +65,7 @@ import org.example.project.utils.LineSegment
 import org.example.project.utils.Relations
 import org.example.project.utils.drawRelation
 import org.example.project.utils.handleClickEvents
+import java.io.File
 
 @Composable
 @Preview
@@ -60,14 +84,29 @@ fun CanvasToDrawView(
     modifier: Modifier,
     fieldColor: Color = Color.White
 ) {
-    var points by remember { mutableStateOf(emptyList<Offset>()) }
-    var lines by remember { mutableStateOf(emptyList<LineSegment>()) }
+    val file = File("points.json")
+    val file2 = File("lines.json")
+    val file3 = File("bezierSegments.json")
+    val file4 = File("bezierControlPoints.json")
+
+    val pointsJson = file.readText()
+    val linesJson = file2.readText()
+    val bezierSegmentsJson = file3.readText()
+    val bezierControlPointsJson = file4.readText()
+
+    var pointsRead = Json.decodeFromString(ListSerializer(OffsetSerializer), pointsJson)
+    var linesRead = Json.decodeFromString<List<LineSegment>>(linesJson)
+    var bezierSegmentsRead = Json.decodeFromString<List<CubicBezierSegment>>(bezierSegmentsJson)
+    var bezierControlPointsRead = Json.decodeFromString<List<BezierControlPoint>>(bezierControlPointsJson)
+
+    var points by remember { mutableStateOf(pointsRead) }
+    var lines by remember { mutableStateOf(linesRead) }
 
     var draggingPointIndex by remember { mutableStateOf<Int?>(null) }
     var selectedPointIndex by remember { mutableStateOf<Int?>(null) }
 
     var dragOffset by remember { mutableStateOf(Offset.Zero) }
-    var isPolygonClosed by remember { mutableStateOf(false) }
+    var isPolygonClosed by remember { mutableStateOf(true) } // zaczynamy od true bo domyslnie Polygon jest zamknięty
 
     var showContextMenu by remember { mutableStateOf(false) }
     var clickPosition by remember { mutableStateOf(Offset.Zero) }
@@ -78,11 +117,31 @@ fun CanvasToDrawView(
     var inputText by remember { mutableStateOf(TextFieldValue("")) } // Przechowuje wartość tekstu
     var selectedLength by remember { mutableStateOf<Float?>(null) } // Zapisuje wybraną długość boku
 
-    var bezierSegments by remember { mutableStateOf(emptyList<CubicBezierSegment>()) }
-    var bezierControlPoints by remember { mutableStateOf(emptyList<BezierControlPoint>()) }
+    var bezierSegments by remember { mutableStateOf(bezierSegmentsRead) }
+    var bezierControlPoints by remember { mutableStateOf(bezierControlPointsRead) }
+
     var draggingBezierControlPointIndex by remember { mutableStateOf<Int?>(null) }
 
     var fixedLengthLineIndex by remember { mutableStateOf<Int?>(null) }
+
+    val resetCanvas: () -> Unit = {
+        points = emptyList()
+        lines = emptyList()
+        bezierSegments = emptyList()
+        bezierControlPoints = emptyList()
+        isPolygonClosed = false
+        selectedPointIndex = null
+        selectedLineIndex = null
+        draggingPointIndex = null
+        draggingBezierControlPointIndex = null
+        fixedLengthLineIndex = null
+        showLengthWindow = false
+        inputText = TextFieldValue("")
+        selectedLength = null
+        showContextMenu = false
+        clickPosition = Offset.Zero
+        dragOffset = Offset.Zero
+    }
 
     ContextMenuArea(items = {
         val menuItems = mutableListOf<ContextMenuItem>()
@@ -157,6 +216,14 @@ fun CanvasToDrawView(
                     onShowContextMenuChange = { showContextMenu = it },
                     onClickPositionChange = { clickPosition = it }
                 )
+            }
+            .onKeyEvent { event -> // Przechwytujemy zdarzenia klawiatury
+                if (event.type == KeyEventType.KeyUp && event.isCtrlPressed && event.key == Key.R) {
+                    resetCanvas() // Jeśli wciśnięto Ctrl + R, resetujemy canvas
+                    true
+                } else {
+                    false
+                }
             }
         ) {
             Canvas(modifier = Modifier
@@ -235,6 +302,42 @@ fun CanvasToDrawView(
                                     }
                                 }
                             }
+                            if(draggingPointIndex == null && draggingBezierControlPointIndex == null) // jesli zlapiemy ggdzielokwiek indziej przesuwamy wielokat
+                            {
+                                for (i in points.indices) {
+                                    points = points.toMutableList().also {
+                                        it[i] = it[i] + dragAmount
+                                    }
+                                }
+                                for (i in bezierControlPoints.indices) {
+                                    bezierControlPoints = bezierControlPoints.toMutableList().also {
+                                        it[i].offset = it[i].offset + dragAmount
+                                    }
+                                }
+                                for (i in bezierSegments.indices) {
+                                    bezierSegments = bezierSegments.toMutableList().also {
+                                        it[i].start = it[i].start + dragAmount
+                                        it[i].control1 = it[i].control1 + dragAmount
+                                        it[i].control2 = it[i].control2 + dragAmount
+                                        it[i].end = it[i].end + dragAmount
+                                    }
+                                }
+                                for (i in lines.indices) {
+                                    lines = lines.toMutableList().also {
+                                        it[i].start = it[i].start + dragAmount
+                                        it[i].end = it[i].end + dragAmount
+                                        it[i].bezierSegment?.let {
+                                            it.start = it.start + dragAmount
+                                            it.control1 = it.control1 + dragAmount
+                                            it.control2 = it.control2 + dragAmount
+                                            it.end = it.end + dragAmount
+                                        }
+                                        it[i].color = it[i].color
+                                        it[i].strokeWidth = it[i].strokeWidth
+                                        it[i].relation = it[i].relation
+                                    }
+                                }
+                            }
                             change.consume()
                         },
                         onDragEnd = {
@@ -305,6 +408,49 @@ fun CanvasToDrawView(
                 }
             }
         }
+    }
+
+    val serializePolygon: () -> Unit = {
+        val jsonPoints = Json.encodeToString(ListSerializer(OffsetSerializer), points)
+        val file = File("points.json")
+        file.writeText(jsonPoints)
+        val jsonLines = Json.encodeToString(lines)
+        val file2 = File("lines.json")
+        file2.writeText(jsonLines)
+        val jsonBezierSegments = Json.encodeToString(bezierSegments)
+        val file3 = File("bezierSegments.json")
+        file3.writeText(jsonBezierSegments)
+        val jsonBezierControlPoints = Json.encodeToString(bezierControlPoints)
+        val file4 = File("bezierControlPoints.json")
+        file4.writeText(jsonBezierControlPoints)
+    }
+
+    Column(
+        Modifier.fillMaxHeight(),
+        verticalArrangement = Arrangement.SpaceBetween
+    ) {
+        Column(
+            modifier = Modifier
+                .verticalScroll(rememberScrollState())
+                .weight(1f, false)
+        ) {
+            //...
+        }
+        Button(
+            onClick = resetCanvas,
+            modifier = Modifier
+                .padding(vertical = 2.dp)
+        ) {
+            Text("Clear Polygon")
+        }
+
+//        Button(
+//            onClick = serializePolygon,
+//            modifier = Modifier
+//                .padding(vertical = 2.dp)
+//        ) {
+//            Text("Zserializuj wielokąt")
+//        }
     }
 
     if(showLengthWindow) {

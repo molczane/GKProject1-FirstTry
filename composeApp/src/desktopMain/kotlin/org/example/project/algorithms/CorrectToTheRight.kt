@@ -34,12 +34,31 @@ fun correctToTheRight(
 
                 pointsList = updatedPoints
 
-                val updatedLines = lineSegments.toMutableList().also {
+                var updatedLines = lineSegments.toMutableList().also {
                     it[indexCurrent] = LineSegment(
                         updatedPoints[indexCurrent],
                         it[indexCurrent].end,
                         relation = it[indexCurrent].relation
                     )
+                }
+
+                val nextIndex = (indexCurrent + 1)%lineSegments.size
+                if(lineSegments[nextIndex].relation == Relations.Bezier) {
+                    updatedLines = updatedLines.also {
+                        val newControlPoint = calculateNewControlPointC1(it[indexCurrent].start, it[indexCurrent].end)
+                        it[nextIndex] = LineSegment(
+                            it[nextIndex].start,
+                            it[nextIndex].end,
+                            relation = it[nextIndex].relation,
+                            bezierSegment = CubicBezierSegment(
+                                it[nextIndex].start,
+                                newControlPoint,
+                                it[nextIndex].bezierSegment!!.control2,
+                                it[nextIndex].bezierSegment!!.end,
+                                nextIndex
+                            )
+                        )
+                    }
                 }
 
                 lineSegments = updatedLines
@@ -106,14 +125,14 @@ fun correctToTheRight(
                 val updatedLines = lineSegments.toMutableList().also {
                     it[indexCurrent] = LineSegment(
                         pointsList[indexCurrent],
-                        it[indexCurrent].end + Offset(0F, dragAmount.y),
+                        it[indexCurrent].end + Offset(0F, currentOffset.y),
                         relation = it[indexCurrent].relation
                     )
                 }
 
                 lineSegments = updatedLines
                 onLinesChange(updatedLines)
-                currentOffset = Offset(0F, dragAmount.y)
+                currentOffset = Offset(0F, currentOffset.y)
                 indexCurrent = (indexCurrent + 1)%lineSegments.size
             }
             Relations.FixedLength -> {

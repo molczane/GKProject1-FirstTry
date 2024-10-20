@@ -1,6 +1,7 @@
 import androidx.compose.foundation.ContextMenuItem
 import androidx.compose.ui.geometry.Offset
 import org.example.project.algorithms.calculateCubicBezierSegment
+import org.example.project.algorithms.correctToTheLeft
 import org.example.project.algorithms.correctToTheRight
 import org.example.project.utils.BezierControlPoint
 import org.example.project.utils.CubicBezierSegment
@@ -68,7 +69,7 @@ fun generateLineMenuItems(
                         index = (index + 1)%lines.size,
                         dragAmount = offset,
                         lineSegmentsIn = updatedLines,
-                        pointsListIn = points,
+                        pointsListIn = updatedPoints,
                         bezierSegments = bezierSegments,
                         bezierControlPoints = bezierControlPoints,
                         onLinesChange = onLinesChange,
@@ -109,6 +110,18 @@ fun generateLineMenuItems(
                     onBezierSegmentsChange = onBezierSegmentsChange,
                     onBezierControlPointsChange = onBezierControlPointsChange
                 )
+//                correctToTheLeft(
+//                    if(index == 0) lines.size - 1 else index - 1,
+//                    Offset(0F, 0F),
+//                    lineSegmentsIn = updatedLines,
+//                    pointsListIn = points,
+//                    bezierSegments = bezierSegments,
+//                    bezierControlPoints = bezierControlPoints,
+//                    onLinesChange = onLinesChange,
+//                    onPointsChange = onPointsChange,
+//                    onBezierSegmentsChange = onBezierSegmentsChange,
+//                    onBezierControlPointsChange = onBezierControlPointsChange
+//                )
                 println("Ustalono linię $index na poziomą!")
             })
         }

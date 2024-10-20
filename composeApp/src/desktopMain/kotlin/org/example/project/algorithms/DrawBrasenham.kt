@@ -3,7 +3,7 @@ package org.example.project.algorithms
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 
-fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBresenhamLine(start: Offset, end: Offset, color: Color, width: Float = 2f) {
+fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBresenhamLine(start: Offset, end: Offset, color: Color, width: Float = 1f) {
     var x0 = start.x.toInt()
     var y0 = start.y.toInt()
     val x1 = end.x.toInt()
