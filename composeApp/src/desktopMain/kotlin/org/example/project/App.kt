@@ -47,6 +47,7 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.rememberTextMeasurer
 
 import generateLineMenuItems
 import kotlinx.serialization.builtins.ListSerializer
@@ -226,6 +227,8 @@ fun CanvasToDrawView(
                 }
             }
         ) {
+            val textMeasurer = rememberTextMeasurer()
+
             Canvas(modifier = Modifier
                 .fillMaxSize()
                 .pointerInput(Unit) {
@@ -358,7 +361,7 @@ fun CanvasToDrawView(
                                 end = lines[i].end,
                                 width = lines[i].strokeWidth
                             )
-                            drawRelation(lines[i])
+                            drawRelation(lines[i], textMeasurer)
                         }
                         else {
                             val cubicBezierSegment = lines[i].bezierSegment!!
@@ -373,7 +376,7 @@ fun CanvasToDrawView(
                                 end = lines.last().end,
                                 width = lines.last().strokeWidth
                             )
-                            drawRelation(lines.last())
+                            drawRelation(lines.last(), textMeasurer)
                         }
                         else {
                             val cubicBezierSegment = lines.last().bezierSegment!!

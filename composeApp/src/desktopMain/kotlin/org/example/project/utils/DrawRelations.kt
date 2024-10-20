@@ -2,14 +2,24 @@ package org.example.project.utils
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextMeasurer
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
 import kotlin.math.abs
 
 // Funkcja rysująca relację na danym segmencie linii
-fun DrawScope.drawRelation(segment: LineSegment) {
+fun DrawScope.drawRelation(segment: LineSegment, textMeasurer: TextMeasurer) {
     // Oblicz wymiary prostokąta wokół linii (z marginesem)
     val rectWidth = 26f
     val rectHeight = 26f
@@ -61,22 +71,37 @@ fun DrawScope.drawRelation(segment: LineSegment) {
         Relations.FixedLength -> {
             // Rysujemy kółko symbolizujące zadaną długość
             val midPoint = segment.start.midpoint(segment.end)
-            drawRect(
-                color = Color.LightGray, // Szary
-                topLeft = Offset(midPoint.x - rectWidth / 2, midPoint.y - rectHeight / 2),
-                size = IntSize(rectWidth.toInt(), rectHeight.toInt()).toSize()
-            )
-            drawRect(
-                color = Color.LightGray, // Szary
-                topLeft = Offset(midPoint.x - rectWidth / 2, midPoint.y - rectHeight / 2),
-                size = IntSize(rectWidth.toInt(), rectHeight.toInt()).toSize(),
-                style = Stroke(width = 4f)
-            )
-            drawCircle(
+
+            // Step 1: Resolve the default FontFamil
+            // Step 2: Define text and style
+            val text = "${abs((segment.start - segment.end).getDistance())}"
+            val textStyle = TextStyle(
+                fontSize = 12.sp,
                 color = Color.Black,
-                radius = 10F,
-                center = midPoint,
-                style = Stroke(width = 2F)
+                fontWeight = FontWeight.Bold,
+                shadow = Shadow(Color.Gray, Offset(2f, 2f), 1f),
+                textDecoration = TextDecoration.Underline
+            )
+
+
+            val textLayoutResult: TextLayoutResult = textMeasurer.measure(
+                text = text,
+                style = textStyle
+            )
+
+            drawRect(
+                color = Color.LightGray, // Szary
+                topLeft = Offset(midPoint.x - textLayoutResult.size.width / 2, midPoint.y - textLayoutResult.size.height / 2),
+                size = IntSize( textLayoutResult.size.width, textLayoutResult.size.height).toSize()
+            )
+
+            drawText(
+                textLayoutResult = textLayoutResult,
+                topLeft = Offset(midPoint.x - textLayoutResult.size.width / 2, midPoint.y - textLayoutResult.size.height / 2),  // Define the position
+                color = Color.Blue,  // Text color
+                alpha = 1f,  // Fully opaque
+                shadow = Shadow(Color.Gray, Offset(4f, 4f), 4f),  // Optional shadow
+                textDecoration = TextDecoration.None  // No decoration
             )
         }
         Relations.None -> {
