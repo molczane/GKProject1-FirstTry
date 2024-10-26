@@ -61,6 +61,7 @@ import org.example.project.algorithms.correctToTheRight
 import org.example.project.algorithms.drawBresenhamLine
 import org.example.project.algorithms.drawCubicBezier
 import org.example.project.utils.BezierControlPoint
+import org.example.project.utils.ContinuityClass
 import org.example.project.utils.CubicBezierSegment
 import org.example.project.utils.LineSegment
 import org.example.project.utils.Relations
@@ -115,7 +116,7 @@ fun CanvasToDrawView(
     var selectedLineIndex by remember { mutableStateOf<Int?>(null) }
 
     var showLengthWindow by remember { mutableStateOf(false) }
-    var inputText by remember { mutableStateOf(TextFieldValue("")) } // Przechowuje wartość tekstu
+    var inputText by remember { mutableStateOf(TextFieldValue("500")) } // Przechowuje wartość tekstu
     var selectedLength by remember { mutableStateOf<Float?>(null) } // Zapisuje wybraną długość boku
 
     var bezierSegments by remember { mutableStateOf(bezierSegmentsRead) }
@@ -172,6 +173,120 @@ fun CanvasToDrawView(
                     println("Usunięto punkt ${index}!")
                 }
             )
+            if(lines[selectedPointIndex!!].relation == Relations.Bezier) {
+                menuItems.add(
+                    ContextMenuItem("Ustaw Ciągłość C1") {
+                        lines = lines.toMutableList().also {
+                            it[selectedPointIndex!!] = LineSegment(
+                                it[selectedPointIndex!!].start, it[selectedPointIndex!!].end,
+                                relation = it[selectedPointIndex!!].relation,
+                                bezierSegment = CubicBezierSegment(
+                                    it[selectedPointIndex!!].bezierSegment!!.start,
+                                    it[selectedPointIndex!!].bezierSegment!!.control1,
+                                    it[selectedPointIndex!!].bezierSegment!!.control2,
+                                    it[selectedPointIndex!!].bezierSegment!!.end,
+                                    it[selectedPointIndex!!].bezierSegment!!.lineIndex,
+                                    ContinuityClass.C1
+                                )
+                            )
+                        }
+                    }
+                )
+                menuItems.add(
+                    ContextMenuItem("Ustaw Ciągłość G1") {
+                        lines = lines.toMutableList().also {
+                            it[selectedPointIndex!!] = LineSegment(
+                                it[selectedPointIndex!!].start, it[selectedPointIndex!!].end,
+                                relation = it[selectedPointIndex!!].relation,
+                                bezierSegment = CubicBezierSegment(
+                                    it[selectedPointIndex!!].bezierSegment!!.start,
+                                    it[selectedPointIndex!!].bezierSegment!!.control1,
+                                    it[selectedPointIndex!!].bezierSegment!!.control2,
+                                    it[selectedPointIndex!!].bezierSegment!!.end,
+                                    it[selectedPointIndex!!].bezierSegment!!.lineIndex,
+                                    ContinuityClass.G1
+                                )
+                            )
+                        }
+                    }
+                )
+                menuItems.add(
+                    ContextMenuItem("Ustaw Ciągłość G0") {
+                        lines = lines.toMutableList().also {
+                            it[selectedPointIndex!!] = LineSegment(
+                                it[selectedPointIndex!!].start, it[selectedPointIndex!!].end,
+                                relation = it[selectedPointIndex!!].relation,
+                                bezierSegment = CubicBezierSegment(
+                                    it[selectedPointIndex!!].bezierSegment!!.start,
+                                    it[selectedPointIndex!!].bezierSegment!!.control1,
+                                    it[selectedPointIndex!!].bezierSegment!!.control2,
+                                    it[selectedPointIndex!!].bezierSegment!!.end,
+                                    it[selectedPointIndex!!].bezierSegment!!.lineIndex,
+                                    ContinuityClass.G0
+                                )
+                            )
+                        }
+                    }
+                )
+            }
+            if(lines[if (selectedPointIndex!! == 0) lines.size - 1 else selectedPointIndex!! - 1].relation == Relations.Bezier)
+            {
+                val index = if (selectedPointIndex!! == 0) lines.size - 1 else selectedPointIndex!! - 1
+                menuItems.add(
+                    ContextMenuItem("Ustaw Ciągłość C1") {
+                        lines = lines.toMutableList().also {
+                            it[index] = LineSegment(
+                                it[index].start, it[index].end,
+                                relation = it[index].relation,
+                                bezierSegment = CubicBezierSegment(
+                                    it[index].bezierSegment!!.start,
+                                    it[index].bezierSegment!!.control1,
+                                    it[index].bezierSegment!!.control2,
+                                    it[index].bezierSegment!!.end,
+                                    it[index].bezierSegment!!.lineIndex,
+                                    endPointContinuityClass = ContinuityClass.C1
+                                )
+                            )
+                        }
+                    }
+                )
+                menuItems.add(
+                    ContextMenuItem("Ustaw Ciągłość G1") {
+                        lines = lines.toMutableList().also {
+                            it[index] = LineSegment(
+                                it[index].start, it[index].end,
+                                relation = it[index].relation,
+                                bezierSegment = CubicBezierSegment(
+                                    it[index].bezierSegment!!.start,
+                                    it[index].bezierSegment!!.control1,
+                                    it[index].bezierSegment!!.control2,
+                                    it[index].bezierSegment!!.end,
+                                    it[index].bezierSegment!!.lineIndex,
+                                    endPointContinuityClass = ContinuityClass.G1
+                                )
+                            )
+                        }
+                    }
+                )
+                menuItems.add(
+                    ContextMenuItem("Ustaw Ciągłość G0") {
+                        lines = lines.toMutableList().also {
+                            it[index] = LineSegment(
+                                it[index].start, it[index].end,
+                                relation = it[index].relation,
+                                bezierSegment = CubicBezierSegment(
+                                    it[index].bezierSegment!!.start,
+                                    it[index].bezierSegment!!.control1,
+                                    it[index].bezierSegment!!.control2,
+                                    it[index].bezierSegment!!.end,
+                                    it[index].bezierSegment!!.lineIndex,
+                                    endPointContinuityClass = ContinuityClass.G0
+                                )
+                            )
+                        }
+                    }
+                )
+            }
         }
         if(selectedLineIndex != null) {
             val index = selectedLineIndex!!
@@ -366,6 +481,7 @@ fun CanvasToDrawView(
                         else {
                             val cubicBezierSegment = lines[i].bezierSegment!!
                             drawCubicBezier(cubicBezierSegment.start, cubicBezierSegment.control1, cubicBezierSegment.control2, cubicBezierSegment.end)
+                            drawRelation(lines[i], textMeasurer)
                         }
                     }
                     if (isPolygonClosed) {
@@ -381,6 +497,7 @@ fun CanvasToDrawView(
                         else {
                             val cubicBezierSegment = lines.last().bezierSegment!!
                             drawCubicBezier(cubicBezierSegment.start, cubicBezierSegment.control1, cubicBezierSegment.control2, cubicBezierSegment.end)
+                            drawRelation(lines.last(), textMeasurer)
                         }
                     }
                 }

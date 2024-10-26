@@ -10,5 +10,7 @@ data class CubicBezierSegment(
     @Serializable(with = OffsetSerializer::class) var control1: Offset,
     @Serializable(with = OffsetSerializer::class) var control2: Offset,
     @Serializable(with = OffsetSerializer::class) var end: Offset,
-    var lineIndex: Int
+    var lineIndex: Int,
+    var startPointContinuityClass: ContinuityClass = ContinuityClass.C1,
+    var endPointContinuityClass: ContinuityClass = ContinuityClass.C1
 )

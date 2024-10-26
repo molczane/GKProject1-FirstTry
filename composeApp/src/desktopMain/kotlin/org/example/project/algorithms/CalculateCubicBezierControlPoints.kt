@@ -47,6 +47,16 @@ fun calculateNewControlPointC1(
     return end + (end - start).normalize() * (length/3)
 }
 
+fun calculateNewControlPointC0(
+    start: Offset,
+    end: Offset,
+    controlPoint: Offset
+) : Offset{
+    val length = (controlPoint - end).getDistance()
+
+    return end + (end - start).normalize() * length
+}
+
 // Funkcja do normalizacji wektora (Offset)
 fun Offset.normalize(): Offset {
     // Oblicz długość wektora
