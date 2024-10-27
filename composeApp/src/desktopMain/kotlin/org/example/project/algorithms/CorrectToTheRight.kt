@@ -6,7 +6,6 @@ import org.example.project.utils.ContinuityClass
 import org.example.project.utils.CubicBezierSegment
 import org.example.project.utils.LineSegment
 import org.example.project.utils.Relations
-import javax.sound.sampled.Line
 
 fun correctToTheRight(
     index: Int,
@@ -46,22 +45,74 @@ fun correctToTheRight(
 
                 val nextIndex = (indexCurrent + 1)%lineSegments.size
                 if(lineSegments[nextIndex].relation == Relations.Bezier) {
-                    updatedLines = updatedLines.also {
-                        val newControlPoint = calculateNewControlPointC1(it[indexCurrent].start, it[indexCurrent].end)
-                        it[nextIndex] = LineSegment(
-                            it[nextIndex].start,
-                            it[nextIndex].end,
-                            relation = it[nextIndex].relation,
-                            bezierSegment = CubicBezierSegment(
-                                it[nextIndex].start,
-                                newControlPoint,
-                                it[nextIndex].bezierSegment!!.control2,
-                                it[nextIndex].bezierSegment!!.end,
-                                nextIndex,
-                                it[nextIndex].bezierSegment!!.startPointContinuityClass,
-                                it[nextIndex].bezierSegment!!.endPointContinuityClass
-                            )
-                        )
+//                    updatedLines = updatedLines.also {
+//                        val newControlPoint = calculateNewControlPointC1(it[indexCurrent].start, it[indexCurrent].end)
+//                        it[previousIndex] = LineSegment(
+//                            it[previousIndex].start,
+//                            it[previousIndex].end,
+//                            relation = it[previousIndex].relation,
+//                            bezierSegment = CubicBezierSegment(
+//                                it[previousIndex].start,
+//                                newControlPoint,
+//                                it[previousIndex].bezierSegment!!.control2,
+//                                it[previousIndex].bezierSegment!!.end,
+//                                previousIndex,
+//                                it[previousIndex].bezierSegment!!.startPointContinuityClass,
+//                                it[previousIndex].bezierSegment!!.endPointContinuityClass
+//                            )
+//                        )
+//                    }
+
+                    when(lineSegments[nextIndex].bezierSegment!!.startPointContinuityClass)
+                    {
+                        ContinuityClass.C1 -> {
+                            updatedLines = updatedLines.also {
+                                val newControlPoint = calculateNewControlPointC1(
+                                    it[indexCurrent].start,
+                                    it[indexCurrent].end
+                                )
+                                it[nextIndex] = LineSegment(
+                                    it[nextIndex].start,
+                                    it[nextIndex].end,
+                                    relation = it[nextIndex].relation,
+                                    bezierSegment = CubicBezierSegment(
+                                        it[nextIndex].start,
+                                        newControlPoint,
+                                        it[nextIndex].bezierSegment!!.control2,
+                                        it[nextIndex].bezierSegment!!.end,
+                                        nextIndex,
+                                        it[nextIndex].bezierSegment!!.startPointContinuityClass,
+                                        it[nextIndex].bezierSegment!!.endPointContinuityClass
+                                    )
+                                )
+                            }
+                        }
+                        ContinuityClass.G1 -> {
+                            updatedLines = updatedLines.also {
+                                val newControlPoint = calculateNewControlPointC0(
+                                    it[indexCurrent].start,
+                                    it[indexCurrent].end,
+                                    it[nextIndex].bezierSegment!!.control1
+                                )
+                                it[nextIndex] = LineSegment(
+                                    it[nextIndex].start,
+                                    it[nextIndex].end,
+                                    relation = it[nextIndex].relation,
+                                    bezierSegment = CubicBezierSegment(
+                                        it[nextIndex].start,
+                                        newControlPoint,
+                                        it[nextIndex].bezierSegment!!.control2,
+                                        it[nextIndex].bezierSegment!!.end,
+                                        nextIndex,
+                                        it[nextIndex].bezierSegment!!.startPointContinuityClass,
+                                        it[nextIndex].bezierSegment!!.endPointContinuityClass
+                                    )
+                                )
+                            }
+                        }
+                        ContinuityClass.G0 -> {
+                            /* DO NOTHING */
+                        }
                     }
                 }
 
@@ -138,18 +189,6 @@ fun correctToTheRight(
                         }
                     }
                 }
-//                val updatedLines = lineSegments.toMutableList().also {
-//                    val newControlPoint = calculateNewControlPointC1(it[if(indexCurrent == 0) lineSegments.size - 1 else indexCurrent - 1].start, pointsList[indexCurrent])
-//                    it[indexCurrent] = LineSegment( pointsList[indexCurrent], it[indexCurrent].end, relation = it[indexCurrent].relation,
-//                        bezierSegment = CubicBezierSegment(
-//                            updatedPoints[indexCurrent],
-//                            newControlPoint,
-//                            it[indexCurrent].bezierSegment!!.control2,
-//                            it[indexCurrent].bezierSegment!!.end,
-//                            indexCurrent
-//                        )
-//                    )
-//                }
 
                 lineSegments = updatedLines
                 onLinesChange(updatedLines)
@@ -176,6 +215,8 @@ fun correctToTheRight(
                 onLinesChange(updatedLines)
                 currentOffset = Offset(currentOffset.x, 0F)
                 indexCurrent = (indexCurrent + 1)%lineSegments.size
+
+                if(currentOffset.x == 0F && currentOffset.y == 0F) { break }
             }
             Relations.Horizontal -> {
                 val updatedPoints = pointsList.toMutableList().also {
@@ -197,6 +238,8 @@ fun correctToTheRight(
                 onLinesChange(updatedLines)
                 currentOffset = Offset(0F, currentOffset.y)
                 indexCurrent = (indexCurrent + 1)%lineSegments.size
+
+                if(currentOffset.x == 0F && currentOffset.y == 0F) { break }
             }
             Relations.FixedLength -> {
                 val updatedPoints = pointsList.toMutableList().also {

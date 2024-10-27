@@ -116,7 +116,7 @@ fun CanvasToDrawView(
     var selectedLineIndex by remember { mutableStateOf<Int?>(null) }
 
     var showLengthWindow by remember { mutableStateOf(false) }
-    var inputText by remember { mutableStateOf(TextFieldValue("500")) } // Przechowuje wartość tekstu
+    var inputText by remember { mutableStateOf(TextFieldValue("600")) } // Przechowuje wartość tekstu
     var selectedLength by remember { mutableStateOf<Float?>(null) } // Zapisuje wybraną długość boku
 
     var bezierSegments by remember { mutableStateOf(bezierSegmentsRead) }
@@ -600,7 +600,7 @@ fun CanvasToDrawView(
                             val newEndPoint = calculateEndPointFixedLength(lines[fixedLengthLineIndex!!].start, lines[fixedLengthLineIndex!!].end, enteredValue)
                             val offset = newEndPoint - lines[fixedLengthLineIndex!!].end
                             lines = lines.toMutableList().also {
-                                it[fixedLengthLineIndex!!] = LineSegment(start = lines[fixedLengthLineIndex!!].start, end = newEndPoint, relation = lines[fixedLengthLineIndex!!].relation)
+                                it[fixedLengthLineIndex!!] = LineSegment(start = lines[fixedLengthLineIndex!!].start, end = newEndPoint, relation = Relations.FixedLength)
                             }
                             correctToTheRight(
                                 (fixedLengthLineIndex!! + 1)%lines.size,

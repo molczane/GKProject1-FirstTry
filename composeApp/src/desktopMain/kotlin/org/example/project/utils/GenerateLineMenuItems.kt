@@ -129,14 +129,6 @@ fun generateLineMenuItems(
         // Ustal bok na stała długość
         if (line.relation != Relations.FixedLength) {
             menuItems.add(ContextMenuItem("Ustal bok na stała długość") {
-                val updatedLines = lines.toMutableList().also {
-                    it[index] = LineSegment(
-                        start = it[index].start,
-                        end = it[index].end,
-                        relation = Relations.FixedLength
-                    )
-                }
-                onLinesChange(updatedLines)
                 onFixedLengthLineIndexChange(index)
                 onShowLengthWindowChange(true)
                 println("Ustalono linię $index na stałą długość!")
