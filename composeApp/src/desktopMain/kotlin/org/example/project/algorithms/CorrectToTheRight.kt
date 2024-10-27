@@ -45,24 +45,6 @@ fun correctToTheRight(
 
                 val nextIndex = (indexCurrent + 1)%lineSegments.size
                 if(lineSegments[nextIndex].relation == Relations.Bezier) {
-//                    updatedLines = updatedLines.also {
-//                        val newControlPoint = calculateNewControlPointC1(it[indexCurrent].start, it[indexCurrent].end)
-//                        it[previousIndex] = LineSegment(
-//                            it[previousIndex].start,
-//                            it[previousIndex].end,
-//                            relation = it[previousIndex].relation,
-//                            bezierSegment = CubicBezierSegment(
-//                                it[previousIndex].start,
-//                                newControlPoint,
-//                                it[previousIndex].bezierSegment!!.control2,
-//                                it[previousIndex].bezierSegment!!.end,
-//                                previousIndex,
-//                                it[previousIndex].bezierSegment!!.startPointContinuityClass,
-//                                it[previousIndex].bezierSegment!!.endPointContinuityClass
-//                            )
-//                        )
-//                    }
-
                     when(lineSegments[nextIndex].bezierSegment!!.startPointContinuityClass)
                     {
                         ContinuityClass.C1 -> {

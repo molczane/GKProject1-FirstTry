@@ -116,6 +116,7 @@ fun CanvasToDrawView(
     var selectedLineIndex by remember { mutableStateOf<Int?>(null) }
 
     var showLengthWindow by remember { mutableStateOf(false) }
+    var showErrorWindow by remember { mutableStateOf(false) }
     var inputText by remember { mutableStateOf(TextFieldValue("600")) } // Przechowuje wartość tekstu
     var selectedLength by remember { mutableStateOf<Float?>(null) } // Zapisuje wybraną długość boku
 
@@ -298,12 +299,14 @@ fun CanvasToDrawView(
                 bezierSegments = bezierSegments,
                 bezierControlPoints = bezierControlPoints,
                 fixedLengthLineIndex = fixedLengthLineIndex,
+                showErrorWindow = showErrorWindow,
                 onLinesChange = { lines = it },
                 onPointsChange = { points = it },
                 onShowLengthWindowChange = { showLengthWindow = it },
                 onBezierSegmentsChange = { bezierSegments = it },
                 onBezierControlPointsChange = { bezierControlPoints = it },
                 onFixedLengthLineIndexChange = { fixedLengthLineIndex = it },
+                onShowErrorWindow = { showErrorWindow = it },
                 menuItems = menuItems
             )
         }
@@ -632,6 +635,47 @@ fun CanvasToDrawView(
                 ) {
                     Text("Anuluj")
                 }
+            }
+        )
+    }
+
+    if(showErrorWindow) {
+        AlertDialog(
+            modifier = Modifier
+                .background(Color.White)
+                .width(200.dp)
+                .height(100.dp),
+            onDismissRequest = { showLengthWindow = false }, // Zamknięcie dialogu
+            title = { Text("Niedozwolona operacja") },
+            confirmButton = {
+                Column(
+                    Modifier.fillMaxHeight(),
+                    verticalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .verticalScroll(rememberScrollState())
+                            .weight(1f, false)
+                    ) {
+                        //...
+                    }
+                    Button(
+                        onClick = {
+                            showErrorWindow = false
+                        }
+                    ) {
+                        Text("OK")
+                    }
+
+//        Button(
+//            onClick = serializePolygon,
+//            modifier = Modifier
+//                .padding(vertical = 2.dp)
+//        ) {
+//            Text("Zserializuj wielokąt")
+//        }
+                }
+
             }
         )
     }

@@ -16,12 +16,14 @@ fun generateLineMenuItems(
     bezierSegments: List<CubicBezierSegment>,
     bezierControlPoints: List<BezierControlPoint>,
     fixedLengthLineIndex: Int?,
+    showErrorWindow: Boolean,
     onLinesChange: (List<LineSegment>) -> Unit,
     onPointsChange: (List<Offset>) -> Unit,
     onShowLengthWindowChange: (Boolean) -> Unit,
     onBezierSegmentsChange: (List<CubicBezierSegment>) -> Unit,
     onBezierControlPointsChange: (List<BezierControlPoint>) -> Unit,
     onFixedLengthLineIndexChange: (Int?) -> Unit,
+    onShowErrorWindow: (Boolean) -> Unit,
     menuItems: MutableList<ContextMenuItem>,
 ) {
     if (selectedLineIndex != null) {
@@ -52,32 +54,43 @@ fun generateLineMenuItems(
         if (line.relation != Relations.Vertical) {
             menuItems.add(
                 ContextMenuItem("Ustal bok na pionowy") {
-                    val offset = Offset(line.start.x - line.end.x, 0F)
-                    val updatedLines = lines.toMutableList().also {
-                        it[index] = LineSegment(
-                            start = it[index].start,
-                            end = Offset(it[index].start.x, it[index].end.y),
-                            relation = Relations.Vertical
+                    val previousIndex = if(index == 0) lines.size - 1 else index - 1
+                    val nextIndex = (index + 1)%lines.size
+
+                    if(
+                        lines[previousIndex].relation == Relations.Vertical ||
+                        lines[nextIndex].relation == Relations.Vertical
+                    ) {
+                        onShowErrorWindow(true)
+                    }
+                    else {
+                        val offset = Offset(line.start.x - line.end.x, 0F)
+                        val updatedLines = lines.toMutableList().also {
+                            it[index] = LineSegment(
+                                start = it[index].start,
+                                end = Offset(it[index].start.x, it[index].end.y),
+                                relation = Relations.Vertical
+                            )
+                        }
+                        val updatedPoints = points.toMutableList().also {
+                            it[(index + 1) % lines.size] = lines[index].end
+                        }
+                        onPointsChange(updatedPoints)
+                        onLinesChange(updatedLines)
+                        correctToTheRight(
+                            index = (index + 1) % lines.size,
+                            dragAmount = offset,
+                            lineSegmentsIn = updatedLines,
+                            pointsListIn = updatedPoints,
+                            bezierSegments = bezierSegments,
+                            bezierControlPoints = bezierControlPoints,
+                            onLinesChange = onLinesChange,
+                            onPointsChange = onPointsChange,
+                            onBezierSegmentsChange = onBezierSegmentsChange,
+                            onBezierControlPointsChange = onBezierControlPointsChange
                         )
+                        println("Ustalono linię $index na pionową!")
                     }
-                    val updatedPoints = points.toMutableList().also {
-                        it[(index + 1)%lines.size] = lines[index].end
-                    }
-                    onPointsChange(updatedPoints)
-                    onLinesChange(updatedLines)
-                    correctToTheRight(
-                        index = (index + 1)%lines.size,
-                        dragAmount = offset,
-                        lineSegmentsIn = updatedLines,
-                        pointsListIn = updatedPoints,
-                        bezierSegments = bezierSegments,
-                        bezierControlPoints = bezierControlPoints,
-                        onLinesChange = onLinesChange,
-                        onPointsChange = onPointsChange,
-                        onBezierSegmentsChange = onBezierSegmentsChange,
-                        onBezierControlPointsChange = onBezierControlPointsChange
-                    )
-                    println("Ustalono linię $index na pionową!")
                 }
             )
         }
@@ -85,31 +98,41 @@ fun generateLineMenuItems(
         // Ustal bok na poziomy
         if (line.relation != Relations.Horizontal) {
             menuItems.add(ContextMenuItem("Ustal bok na poziomy") {
-                val offset = Offset(0F, line.start.y - line.end.y)
-                val updatedLines = lines.toMutableList().also {
-                    it[index] = LineSegment(
-                        start = it[index].start,
-                        end = it[index].end + offset,
-                        relation = Relations.Horizontal
+                val previousIndex = if(index == 0) lines.size - 1 else index - 1
+                val nextIndex = (index + 1)%lines.size
+
+                if(
+                    lines[previousIndex].relation == Relations.Horizontal ||
+                    lines[nextIndex].relation == Relations.Horizontal
+                ) {
+                    onShowErrorWindow(true)
+                }
+                else {
+                    val offset = Offset(0F, line.start.y - line.end.y)
+                    val updatedLines = lines.toMutableList().also {
+                        it[index] = LineSegment(
+                            start = it[index].start,
+                            end = it[index].end + offset,
+                            relation = Relations.Horizontal
+                        )
+                    }
+                    val updatedPoints = points.toMutableList().also {
+                        it[(index + 1) % lines.size] = lines[index].end
+                    }
+                    onPointsChange(updatedPoints)
+                    onLinesChange(updatedLines)
+                    correctToTheRight(
+                        index = (index + 1) % lines.size,
+                        dragAmount = offset,
+                        lineSegmentsIn = updatedLines,
+                        pointsListIn = points,
+                        bezierSegments = bezierSegments,
+                        bezierControlPoints = bezierControlPoints,
+                        onLinesChange = onLinesChange,
+                        onPointsChange = onPointsChange,
+                        onBezierSegmentsChange = onBezierSegmentsChange,
+                        onBezierControlPointsChange = onBezierControlPointsChange
                     )
-                }
-                val updatedPoints = points.toMutableList().also {
-                    it[(index + 1)%lines.size] = lines[index].end
-                }
-                onPointsChange(updatedPoints)
-                onLinesChange(updatedLines)
-                correctToTheRight(
-                    index = (index + 1)%lines.size,
-                    dragAmount = offset,
-                    lineSegmentsIn = updatedLines,
-                    pointsListIn = points,
-                    bezierSegments = bezierSegments,
-                    bezierControlPoints = bezierControlPoints,
-                    onLinesChange = onLinesChange,
-                    onPointsChange = onPointsChange,
-                    onBezierSegmentsChange = onBezierSegmentsChange,
-                    onBezierControlPointsChange = onBezierControlPointsChange
-                )
 //                correctToTheLeft(
 //                    if(index == 0) lines.size - 1 else index - 1,
 //                    Offset(0F, 0F),
@@ -122,7 +145,8 @@ fun generateLineMenuItems(
 //                    onBezierSegmentsChange = onBezierSegmentsChange,
 //                    onBezierControlPointsChange = onBezierControlPointsChange
 //                )
-                println("Ustalono linię $index na poziomą!")
+                    println("Ustalono linię $index na poziomą!")
+                }
             })
         }
 
