@@ -179,8 +179,16 @@ fun generateLineMenuItems(
                 val updatedBezierSegments = bezierSegments.toMutableList().also {
                     it.add(bezierSegment)
                 }
-                var bezierControlPoint1 = BezierControlPoint(offset = bezierSegment.control1, lineIndex = index, index = 1)
-                var bezierControlPoint2 = BezierControlPoint(offset = bezierSegment.control2, lineIndex = index, index = 2)
+                var bezierControlPoint1 = BezierControlPoint(
+                    offset = bezierSegment.control1,
+                    lineIndex = index,
+                    index = 1
+                )
+                var bezierControlPoint2 = BezierControlPoint(
+                    offset = bezierSegment.control2,
+                    lineIndex = index,
+                    index = 2
+                )
                 val updatedBezierControlPoints = bezierControlPoints.toMutableList().also {
                     it.add(bezierControlPoint1)
                     it.add(bezierControlPoint2)
