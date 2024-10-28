@@ -81,6 +81,7 @@ fun CanvasToDrawView(
     modifier: Modifier,
     fieldColor: Color = Color.White
 ) {
+    /* Reading serialized polygon */
     val file = File("points.json")
     val file2 = File("lines.json")
     val file3 = File("bezierSegments.json")
@@ -214,16 +215,13 @@ fun CanvasToDrawView(
                     onClickPositionChange = { clickPosition = it }
                 )
             }
-            .onKeyEvent { event -> // Przechwytujemy zdarzenia klawiatury
-                if (event.type == KeyEventType.KeyUp && event.isCtrlPressed && event.key == Key.R) {
-                    resetCanvas() // Jeśli wciśnięto Ctrl + R, resetujemy canvas
-                    true
-                } else {
-                    false
-                }
-            }
         ) {
             val textMeasurer = rememberTextMeasurer()
+
+            // testowe wypisanie punktow kotrolnych beziera
+            for (bezierControlPoint in bezierControlPoints) {
+                println(bezierControlPoint)
+            }
 
             Canvas(modifier = Modifier
                 .fillMaxSize()
@@ -245,7 +243,7 @@ fun CanvasToDrawView(
                             }
                             if(draggingPointIndex == null) {
                                 draggingBezierControlPointIndex = bezierControlPoints.indexOfFirst {
-                                    (offset - it.offset).getDistance() < 10.dp.toPx()
+                                    (offset - it.offset).getDistance() < 20.dp.toPx()
                                 }.takeIf { it != -1 }
                                 if(draggingBezierControlPointIndex != null) {
                                     dragOffset = offset - bezierControlPoints[draggingBezierControlPointIndex!!].offset
@@ -310,26 +308,26 @@ fun CanvasToDrawView(
                                 }
                                 for (i in bezierControlPoints.indices) {
                                     bezierControlPoints = bezierControlPoints.toMutableList().also {
-                                        it[i].offset = it[i].offset + dragAmount
+                                        it[i].offset += dragAmount
                                     }
                                 }
                                 for (i in bezierSegments.indices) {
                                     bezierSegments = bezierSegments.toMutableList().also {
-                                        it[i].start = it[i].start + dragAmount
-                                        it[i].control1 = it[i].control1 + dragAmount
-                                        it[i].control2 = it[i].control2 + dragAmount
-                                        it[i].end = it[i].end + dragAmount
+                                        it[i].start += dragAmount
+                                        it[i].control1 += dragAmount
+                                        it[i].control2 += dragAmount
+                                        it[i].end += dragAmount
                                     }
                                 }
                                 for (i in lines.indices) {
-                                    lines = lines.toMutableList().also {
-                                        it[i].start = it[i].start + dragAmount
-                                        it[i].end = it[i].end + dragAmount
+                                    lines = lines.toMutableList().also { it ->
+                                        it[i].start += dragAmount
+                                        it[i].end += dragAmount
                                         it[i].bezierSegment?.let {
-                                            it.start = it.start + dragAmount
-                                            it.control1 = it.control1 + dragAmount
-                                            it.control2 = it.control2 + dragAmount
-                                            it.end = it.end + dragAmount
+                                            it.start += dragAmount
+                                            it.control1 += dragAmount
+                                            it.control2 += dragAmount
+                                            it.end += dragAmount
                                         }
                                         it[i].color = it[i].color
                                         it[i].strokeWidth = it[i].strokeWidth
@@ -406,11 +404,20 @@ fun CanvasToDrawView(
                             radius = 4.dp.toPx()
                         )
                     }
+                    bezierControlPoints.forEach { bezierControlPoint ->
+                        drawCircle(
+                            color = Color.Yellow,
+                            center = bezierControlPoint.offset,
+                            radius = 4.dp.toPx()
+                        )
+                    }
                 }
             }
         }
     }
 
+
+    // helper function to serialize polygon if needed
     val serializePolygon: () -> Unit = {
         val jsonPoints = Json.encodeToString(ListSerializer(OffsetSerializer), points)
         val file = File("points.json")
@@ -535,7 +542,7 @@ fun CanvasToDrawView(
                             .verticalScroll(rememberScrollState())
                             .weight(1f, false)
                     ) {
-                        //...
+                        /* DO NOTHING */
                     }
                     Button(
                         onClick = {
@@ -545,7 +552,6 @@ fun CanvasToDrawView(
                         Text("OK")
                     }
                 }
-
             }
         )
     }
