@@ -6,6 +6,7 @@ import org.example.project.utils.BezierControlPoint
 import org.example.project.utils.CubicBezierSegment
 import org.example.project.utils.LineSegment
 import org.example.project.utils.Relations
+import org.example.project.utils.isEveryLineFixedLength
 import org.example.project.utils.midpoint
 
 fun generateLineMenuItems(
@@ -152,9 +153,19 @@ fun generateLineMenuItems(
         // Ustal bok na stała długość
         if (line.relation != Relations.FixedLength) {
             menuItems.add(ContextMenuItem("Ustal bok na stała długość") {
-                onFixedLengthLineIndexChange(index)
-                onShowLengthWindowChange(true)
-                println("Ustalono linię $index na stałą długość!")
+                val updatedLines = lines.toMutableList().apply {
+                    this[index] = this[index].copy(
+                        relation = Relations.FixedLength
+                    )
+                }
+                if(isEveryLineFixedLength(updatedLines)) {
+                    onShowErrorWindow(true)
+                }
+                else {
+                    onFixedLengthLineIndexChange(index)
+                    onShowLengthWindowChange(true)
+                    println("Ustalono linię $index na stałą długość!")
+                }
             })
         }
 

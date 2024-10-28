@@ -459,13 +459,6 @@ fun CanvasToDrawView(
                             radius = 4.dp.toPx()
                         )
                     }
-//                    bezierControlPoints.forEach { bezierControlPoint ->
-//                        drawCircle(
-//                            color = Color.Yellow,
-//                            center = bezierControlPoint.offset,
-//                            radius = 4.dp.toPx()
-//                        )
-//                    }
                 }
             }
         }
