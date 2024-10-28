@@ -48,6 +48,7 @@ import generateLineMenuItems
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import moveAll
 
 import org.example.project.algorithms.calculateEndPointFixedLength
 import org.example.project.algorithms.correctToTheLeft
@@ -301,39 +302,17 @@ fun CanvasToDrawView(
                             }
                             if(draggingPointIndex == null && draggingBezierControlPointIndex == null) // jesli zlapiemy ggdzielokwiek indziej przesuwamy wielokat
                             {
-                                for (i in points.indices) {
-                                    points = points.toMutableList().also {
-                                        it[i] = it[i] + dragAmount
-                                    }
-                                }
-                                for (i in bezierControlPoints.indices) {
-                                    bezierControlPoints = bezierControlPoints.toMutableList().also {
-                                        it[i].offset += dragAmount
-                                    }
-                                }
-                                for (i in bezierSegments.indices) {
-                                    bezierSegments = bezierSegments.toMutableList().also {
-                                        it[i].start += dragAmount
-                                        it[i].control1 += dragAmount
-                                        it[i].control2 += dragAmount
-                                        it[i].end += dragAmount
-                                    }
-                                }
-                                for (i in lines.indices) {
-                                    lines = lines.toMutableList().also { it ->
-                                        it[i].start += dragAmount
-                                        it[i].end += dragAmount
-                                        it[i].bezierSegment?.let {
-                                            it.start += dragAmount
-                                            it.control1 += dragAmount
-                                            it.control2 += dragAmount
-                                            it.end += dragAmount
-                                        }
-                                        it[i].color = it[i].color
-                                        it[i].strokeWidth = it[i].strokeWidth
-                                        it[i].relation = it[i].relation
-                                    }
-                                }
+                                moveAll(
+                                    dragAmount,
+                                    points,
+                                    bezierControlPoints,
+                                    bezierSegments,
+                                    lines,
+                                    onPointsChange = { points = it },
+                                    onLinesChange = { lines = it },
+                                    onBezierSegmentsChange = { bezierSegments = it },
+                                    onBezierControlPointsChange = { bezierControlPoints = it }
+                                )
                             }
                             change.consume()
                         },
