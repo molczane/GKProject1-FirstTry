@@ -32,12 +32,6 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.isCtrlPressed
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onKeyEvent
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
@@ -49,6 +43,7 @@ import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import moveAll
+import moveBezierControlPoint
 
 import org.example.project.algorithms.calculateEndPointFixedLength
 import org.example.project.algorithms.correctToTheLeft
@@ -282,22 +277,45 @@ fun CanvasToDrawView(
                                 }
                             }
                             if(draggingBezierControlPointIndex != null) {
-                                val index = draggingBezierControlPointIndex!!
-                                val lineIndex = bezierControlPoints[index].lineIndex
-                                val line = lines[lineIndex]
-                                val oldBezierSegment = line.bezierSegment!!
-                                bezierControlPoints[index].offset = change.position - dragOffset
-                                if(bezierControlPoints[index].index == 1) {
-                                    lines = lines.toMutableList().also {
-                                        it[lineIndex] = LineSegment(start = line.start, end = line.end, relation = line.relation,
-                                            bezierSegment = CubicBezierSegment(oldBezierSegment.start, bezierControlPoints[index].offset, oldBezierSegment.control2, oldBezierSegment.end, lineIndex))
-                                    }
+                                val pair =  moveBezierControlPoint(
+                                    index = draggingBezierControlPointIndex!!,
+                                    dragAmount = dragAmount,
+                                    bezierControlPoints = bezierControlPoints,
+                                    lines = lines,
+                                    points = points,
+                                    bezierSegments = bezierSegments,
+                                    onBezierControlPointsChange = { bezierControlPoints = it },
+                                    onLinesChange = { lines = it },
+                                    onPointsChange = { points = it },
+                                    onBezierSegmentsChange = { bezierSegments = it }
+                                )
+                                if(pair.first != Offset.Zero && bezierControlPoints[draggingBezierControlPointIndex!!].number == 1) {
+                                    correctToTheLeft(
+                                        pair.second,
+                                        pair.first,
+                                        lineSegmentsIn = lines,
+                                        pointsListIn = points,
+                                        bezierSegments = bezierSegments,
+                                        bezierControlPoints = bezierControlPoints,
+                                        onPointsChange = { points = it },
+                                        onLinesChange = { lines = it },
+                                        onBezierSegmentsChange = { bezierSegments = it },
+                                        onBezierControlPointsChange = { bezierControlPoints = it }
+                                    )
                                 }
-                                else {
-                                    lines = lines.toMutableList().also {
-                                        it[lineIndex] = LineSegment(start = line.start, end = line.end, relation = line.relation,
-                                            bezierSegment = CubicBezierSegment(oldBezierSegment.start, oldBezierSegment.control1, bezierControlPoints[index].offset, oldBezierSegment.end, lineIndex))
-                                    }
+                                if(pair.first != Offset.Zero && bezierControlPoints[draggingBezierControlPointIndex!!].number == 2) {
+                                    correctToTheRight(
+                                        pair.second,
+                                        pair.first,
+                                        lineSegmentsIn = lines,
+                                        pointsListIn = points,
+                                        bezierSegments = bezierSegments,
+                                        bezierControlPoints = bezierControlPoints,
+                                        onPointsChange = { points = it },
+                                        onLinesChange = { lines = it },
+                                        onBezierSegmentsChange = { bezierSegments = it },
+                                        onBezierControlPointsChange = { bezierControlPoints = it }
+                                    )
                                 }
                             }
                             if(draggingPointIndex == null && draggingBezierControlPointIndex == null) // jesli zlapiemy ggdzielokwiek indziej przesuwamy wielokat

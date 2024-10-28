@@ -65,7 +65,7 @@ fun correctToTheLeft(
                         }
                         ContinuityClass.G1 -> {
                             updatedLines = updatedLines.also {
-                                val newControlPoint = calculateNewControlPointC0(
+                                val newControlPoint = calculateNewControlPointG1(
                                     it[indexCurrent].end,
                                     it[indexCurrent].start,
                                     it[previousIndex].bezierSegment!!.control2
@@ -120,7 +120,7 @@ fun correctToTheLeft(
                     }
                     ContinuityClass.G1 -> {
                         updatedLines = lineSegments.toMutableList().also {
-                            val newControlPoint = calculateNewControlPointC0(
+                            val newControlPoint = calculateNewControlPointG1(
                                 it[(indexCurrent + 1)%lineSegments.size].end,
                                 pointsList[(indexCurrent + 1)%lineSegments.size],
                                 it[indexCurrent].bezierSegment!!.control2

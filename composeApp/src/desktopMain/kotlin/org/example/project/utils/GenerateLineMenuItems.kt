@@ -1,7 +1,6 @@
 import androidx.compose.foundation.ContextMenuItem
 import androidx.compose.ui.geometry.Offset
 import org.example.project.algorithms.calculateCubicBezierSegment
-import org.example.project.algorithms.correctToTheLeft
 import org.example.project.algorithms.correctToTheRight
 import org.example.project.utils.BezierControlPoint
 import org.example.project.utils.CubicBezierSegment
@@ -182,12 +181,12 @@ fun generateLineMenuItems(
                 var bezierControlPoint1 = BezierControlPoint(
                     offset = bezierSegment.control1,
                     lineIndex = index,
-                    index = 1
+                    number = 1
                 )
                 var bezierControlPoint2 = BezierControlPoint(
                     offset = bezierSegment.control2,
                     lineIndex = index,
-                    index = 2
+                    number = 2
                 )
                 val updatedBezierControlPoints = bezierControlPoints.toMutableList().also {
                     it.add(bezierControlPoint1)

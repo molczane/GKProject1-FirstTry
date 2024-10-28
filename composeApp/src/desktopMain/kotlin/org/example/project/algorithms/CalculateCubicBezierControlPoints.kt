@@ -47,7 +47,7 @@ fun calculateNewControlPointC1(
     return end + (end - start).normalize() * (length/3)
 }
 
-fun calculateNewControlPointC0(
+fun calculateNewControlPointG1(
     start: Offset,
     end: Offset,
     controlPoint: Offset

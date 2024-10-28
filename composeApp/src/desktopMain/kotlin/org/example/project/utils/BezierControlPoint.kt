@@ -12,5 +12,5 @@ data class BezierControlPoint(
     @Serializable(with = ColorSerializer::class) var color: Color = Color.Blue,
     var radius: Float = 4F,
     var lineIndex: Int,
-    var index: Int
+    var number: Int
 )
