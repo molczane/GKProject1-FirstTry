@@ -161,42 +161,53 @@ fun generateLineMenuItems(
         // Zrób z boku krzywą Beziera 3-go stopnia
         if (line.relation != Relations.Bezier) {
             menuItems.add(ContextMenuItem("Zrób z boku krzywą Beziera 3-go stopnia") {
-                val bezierSegment = calculateCubicBezierSegment(start = line.start,
-                    end = line.end,
-                    lineIndex = index,
-                    previousLineSegment = lines[if(index == 0) lines.size - 1 else index - 1],
-                    nextLineSegment = lines [(index + 1)%lines.size]
-                )
-                val updatedLines = lines.toMutableList().also {
-                    it[index] = LineSegment(
-                        start = it[index].start,
-                        end = it[index].end,
-                        relation = Relations.Bezier,
-                        bezierSegment = bezierSegment
+                val previousIndex = if (index == 0) lines.size - 1 else index - 1
+                val nextIndex = (index + 1) % lines.size
+                if (
+                    lines[previousIndex].relation == Relations.Bezier ||
+                    lines[nextIndex].relation == Relations.Bezier
+                ) {
+                    onShowErrorWindow(true)
+                } else {
+                    val bezierSegment = calculateCubicBezierSegment(
+                        start = line.start,
+                        end = line.end,
+                        lineIndex = index,
+                        previousLineSegment = lines[if (index == 0) lines.size - 1 else index - 1],
+                        nextLineSegment = lines[(index + 1) % lines.size]
                     )
+                    val updatedLines = lines.toMutableList().also {
+                        it[index] = LineSegment(
+                            start = it[index].start,
+                            end = it[index].end,
+                            relation = Relations.Bezier,
+                            bezierSegment = bezierSegment
+                        )
+                    }
+                    val updatedBezierSegments = bezierSegments.toMutableList().also {
+                        it.add(bezierSegment)
+                    }
+                    var bezierControlPoint1 = BezierControlPoint(
+                        offset = bezierSegment.control1,
+                        lineIndex = index,
+                        number = 1
+                    )
+                    var bezierControlPoint2 = BezierControlPoint(
+                        offset = bezierSegment.control2,
+                        lineIndex = index,
+                        number = 2
+                    )
+                    val updatedBezierControlPoints = bezierControlPoints.toMutableList().also {
+                        it.add(bezierControlPoint1)
+                        it.add(bezierControlPoint2)
+                    }
+                    onBezierControlPointsChange(updatedBezierControlPoints)
+                    onBezierSegmentsChange(updatedBezierSegments)
+                    onLinesChange(updatedLines)
+                    println("Ustalono linię $index na segment Beziera 3-go stopnia!")
                 }
-                val updatedBezierSegments = bezierSegments.toMutableList().also {
-                    it.add(bezierSegment)
-                }
-                var bezierControlPoint1 = BezierControlPoint(
-                    offset = bezierSegment.control1,
-                    lineIndex = index,
-                    number = 1
-                )
-                var bezierControlPoint2 = BezierControlPoint(
-                    offset = bezierSegment.control2,
-                    lineIndex = index,
-                    number = 2
-                )
-                val updatedBezierControlPoints = bezierControlPoints.toMutableList().also {
-                    it.add(bezierControlPoint1)
-                    it.add(bezierControlPoint2)
-                }
-                onBezierControlPointsChange(updatedBezierControlPoints)
-                onBezierSegmentsChange(updatedBezierSegments)
-                onLinesChange(updatedLines)
-                println("Ustalono linię $index na segment Beziera 3-go stopnia!")
-            })
+            }
+            )
         }
 
         // Usuń ograniczenia

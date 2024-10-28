@@ -45,6 +45,9 @@ fun correctToTheRight(
 
                 val nextIndex = (indexCurrent + 1)%lineSegments.size
                 if(lineSegments[nextIndex].relation == Relations.Bezier) {
+                    val draggingBezierControlPointIndex = bezierControlPoints.indexOfFirst {
+                        (lineSegments[nextIndex].bezierSegment!!.control1 - it.offset).getDistance() < 20F
+                    }.takeIf { it != -1 }
                     when(lineSegments[nextIndex].bezierSegment!!.startPointContinuityClass)
                     {
                         ContinuityClass.C1 -> {
@@ -67,6 +70,12 @@ fun correctToTheRight(
                                         it[nextIndex].bezierSegment!!.endPointContinuityClass
                                     )
                                 )
+                                val updatedBezierControlPoints = bezierControlPoints.toMutableList().apply {
+                                    this[draggingBezierControlPointIndex!!] = this[draggingBezierControlPointIndex!!].copy(
+                                        offset = newControlPoint
+                                    )
+                                }
+                                onBezierControlPointsChange(updatedBezierControlPoints)
                             }
                         }
                         ContinuityClass.G1 -> {
@@ -90,6 +99,12 @@ fun correctToTheRight(
                                         it[nextIndex].bezierSegment!!.endPointContinuityClass
                                     )
                                 )
+                                val updatedBezierControlPoints = bezierControlPoints.toMutableList().apply {
+                                    this[draggingBezierControlPointIndex!!] = this[draggingBezierControlPointIndex!!].copy(
+                                        offset = newControlPoint
+                                    )
+                                }
+                                onBezierControlPointsChange(updatedBezierControlPoints)
                             }
                         }
                         ContinuityClass.G0 -> {
@@ -113,7 +128,9 @@ fun correctToTheRight(
                 onPointsChange(updatedPoints)
 
                 var updatedLines : MutableList<LineSegment> = emptyList<LineSegment>().toMutableList()
-
+                val draggingBezierControlPointIndex = bezierControlPoints.indexOfFirst {
+                    (lineSegments[indexCurrent].bezierSegment!!.control1 - it.offset).getDistance() < 20F
+                }.takeIf { it != -1 }
                 when(lineSegments[indexCurrent].bezierSegment!!.startPointContinuityClass)
                 {
                     ContinuityClass.C1 -> {
@@ -130,6 +147,12 @@ fun correctToTheRight(
                                     it[indexCurrent].bezierSegment!!.endPointContinuityClass
                                 )
                             )
+                            val updatedBezierControlPoints = bezierControlPoints.toMutableList().apply {
+                                this[draggingBezierControlPointIndex!!] = this[draggingBezierControlPointIndex!!].copy(
+                                    offset = newControlPoint
+                                )
+                            }
+                            onBezierControlPointsChange(updatedBezierControlPoints)
                         }
                     }
                     ContinuityClass.G1 -> {
@@ -150,6 +173,12 @@ fun correctToTheRight(
                                     it[indexCurrent].bezierSegment!!.endPointContinuityClass
                                 )
                             )
+                            val updatedBezierControlPoints = bezierControlPoints.toMutableList().apply {
+                                this[draggingBezierControlPointIndex!!] = this[draggingBezierControlPointIndex!!].copy(
+                                    offset = newControlPoint
+                                )
+                            }
+                            onBezierControlPointsChange(updatedBezierControlPoints)
                         }
                     }
                     ContinuityClass.G0 -> {

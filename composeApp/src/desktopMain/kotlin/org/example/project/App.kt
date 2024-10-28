@@ -15,6 +15,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -49,7 +50,10 @@ import org.example.project.algorithms.calculateEndPointFixedLength
 import org.example.project.algorithms.correctToTheLeft
 import org.example.project.algorithms.correctToTheRight
 import org.example.project.algorithms.drawBresenhamLine
-import org.example.project.algorithms.drawCubicBezier
+import org.example.project.algorithms.drawCubicBezierBrasenham
+import org.example.project.algorithms.drawCubicBezierBrasenhamIncremental
+import org.example.project.algorithms.drawCubicBezierWu
+import org.example.project.algorithms.drawWuLine
 import org.example.project.utils.BezierControlPoint
 import org.example.project.utils.CubicBezierSegment
 import org.example.project.utils.LineSegment
@@ -118,6 +122,8 @@ fun CanvasToDrawView(
     var draggingBezierControlPointIndex by remember { mutableStateOf<Int?>(null) }
 
     var fixedLengthLineIndex by remember { mutableStateOf<Int?>(null) }
+
+    var isBrasenhamUsed by remember { mutableStateOf(true)}
 
     val resetCanvas: () -> Unit = {
         points = emptyList()
@@ -342,38 +348,90 @@ fun CanvasToDrawView(
                     )
                 }
             ) {
-                // Draw lines between points
-                if (lines.isNotEmpty()) {
-                    for (i in 0 until lines.size) {
-                        if(lines[i].relation != Relations.Bezier) {
+                if(isBrasenhamUsed) {
+                    // Draw lines between points
+                    if (lines.isNotEmpty()) {
+                        for (i in 0 until lines.size) {
+                            if (lines[i].relation != Relations.Bezier) {
                             drawBresenhamLine(
                                 color = lines[i].color,
                                 start = lines[i].start,
                                 end = lines[i].end,
                                 width = lines[i].strokeWidth
                             )
-                            drawRelation(lines[i], textMeasurer)
+                                drawRelation(lines[i], textMeasurer)
+                            } else {
+                                val cubicBezierSegment = lines[i].bezierSegment!!
+                                drawCubicBezierBrasenhamIncremental(
+                                    cubicBezierSegment.start,
+                                    cubicBezierSegment.control1,
+                                    cubicBezierSegment.control2,
+                                    cubicBezierSegment.end
+                                )
+                                drawRelation(lines[i], textMeasurer)
+                            }
                         }
-                        else {
-                            val cubicBezierSegment = lines[i].bezierSegment!!
-                            drawCubicBezier(cubicBezierSegment.start, cubicBezierSegment.control1, cubicBezierSegment.control2, cubicBezierSegment.end)
-                            drawRelation(lines[i], textMeasurer)
-                        }
-                    }
-                    if (isPolygonClosed) {
-                        if(lines.last().relation != Relations.Bezier) {
+                        if (isPolygonClosed) {
+                            if (lines.last().relation != Relations.Bezier) {
                             drawBresenhamLine(
                                 color = Color.Green,
                                 start = lines.last().start,
                                 end = lines.last().end,
                                 width = lines.last().strokeWidth
                             )
-                            drawRelation(lines.last(), textMeasurer)
+                                drawRelation(lines.last(), textMeasurer)
+                            } else {
+                                val cubicBezierSegment = lines.last().bezierSegment!!
+                                drawCubicBezierBrasenhamIncremental(
+                                    cubicBezierSegment.start,
+                                    cubicBezierSegment.control1,
+                                    cubicBezierSegment.control2,
+                                    cubicBezierSegment.end
+                                )
+                                drawRelation(lines.last(), textMeasurer)
+                            }
                         }
-                        else {
-                            val cubicBezierSegment = lines.last().bezierSegment!!
-                            drawCubicBezier(cubicBezierSegment.start, cubicBezierSegment.control1, cubicBezierSegment.control2, cubicBezierSegment.end)
-                            drawRelation(lines.last(), textMeasurer)
+                    }
+                }
+                else {
+                    if (lines.isNotEmpty()) {
+                        for (i in 0 until lines.size) {
+                            if (lines[i].relation != Relations.Bezier) {
+                                drawWuLine(
+                                    color = lines[i].color,
+                                    start = lines[i].start,
+                                    end = lines[i].end,
+                                )
+                                drawRelation(lines[i], textMeasurer)
+                            } else {
+                                val cubicBezierSegment = lines[i].bezierSegment!!
+                                drawCubicBezierWu(
+                                    cubicBezierSegment.start,
+                                    cubicBezierSegment.control1,
+                                    cubicBezierSegment.control2,
+                                    cubicBezierSegment.end
+                                )
+                                drawRelation(lines[i], textMeasurer)
+                            }
+                        }
+                        if (isPolygonClosed) {
+                            if (lines.last().relation != Relations.Bezier) {
+                                drawWuLine(
+                                    color = Color.Green,
+                                    start = lines.last().start,
+                                    end = lines.last().end
+                                )
+                                drawRelation(lines.last(), textMeasurer)
+                            } else {
+                                val cubicBezierSegment = lines.last().bezierSegment!!
+                                drawCubicBezierWu(
+                                    cubicBezierSegment.start,
+                                    cubicBezierSegment.control1,
+                                    cubicBezierSegment.control2,
+                                    cubicBezierSegment.end
+                                )
+                                drawRelation(lines.last(), textMeasurer)
+                            }
                         }
                     }
                 }
@@ -382,7 +440,7 @@ fun CanvasToDrawView(
                     // Draw points
                     points.forEach { point ->
                         drawCircle(
-                            color = Color.DarkGray,
+                            color = Color.Red,
                             center = point,
                             radius = 4.dp.toPx()
                         )
@@ -401,13 +459,13 @@ fun CanvasToDrawView(
                             radius = 4.dp.toPx()
                         )
                     }
-                    bezierControlPoints.forEach { bezierControlPoint ->
-                        drawCircle(
-                            color = Color.Yellow,
-                            center = bezierControlPoint.offset,
-                            radius = 4.dp.toPx()
-                        )
-                    }
+//                    bezierControlPoints.forEach { bezierControlPoint ->
+//                        drawCircle(
+//                            color = Color.Yellow,
+//                            center = bezierControlPoint.offset,
+//                            radius = 4.dp.toPx()
+//                        )
+//                    }
                 }
             }
         }
@@ -430,6 +488,31 @@ fun CanvasToDrawView(
         file4.writeText(jsonBezierControlPoints)
     }
 
+    val loadPolygon: () -> Unit = {
+        /* Reading serialized polygon */
+        val file = File("points.json")
+        val file2 = File("lines.json")
+        val file3 = File("bezierSegments.json")
+        val file4 = File("bezierControlPoints.json")
+
+        val pointsJson = file.readText()
+        val linesJson = file2.readText()
+        val bezierSegmentsJson = file3.readText()
+        val bezierControlPointsJson = file4.readText()
+
+        pointsRead = Json.decodeFromString(ListSerializer(OffsetSerializer), pointsJson)
+        linesRead = Json.decodeFromString<List<LineSegment>>(linesJson)
+        bezierSegmentsRead = Json.decodeFromString<List<CubicBezierSegment>>(bezierSegmentsJson)
+        bezierControlPointsRead = Json.decodeFromString<List<BezierControlPoint>>(bezierControlPointsJson)
+
+        points = pointsRead
+        lines = linesRead
+        bezierSegments = bezierSegmentsRead
+        bezierControlPoints = bezierControlPointsRead
+
+        isPolygonClosed = true
+    }
+
     Column(
         Modifier.fillMaxHeight(),
         verticalArrangement = Arrangement.SpaceBetween
@@ -441,21 +524,33 @@ fun CanvasToDrawView(
         ) {
             //...
         }
-        Button(
-            onClick = resetCanvas,
-            modifier = Modifier
-                .padding(vertical = 2.dp)
+        Row(
+            modifier = Modifier.padding(vertical = 2.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp) // Odstęp między przyciskami
         ) {
-            Text("Clear Polygon")
-        }
+            Button(
+                onClick = resetCanvas
+            ) {
+                Text("Clear Polygon")
+            }
 
-//        Button(
-//            onClick = serializePolygon,
-//            modifier = Modifier
-//                .padding(vertical = 2.dp)
-//        ) {
-//            Text("Zserializuj wielokąt")
-//        }
+            Button(
+                onClick = serializePolygon
+            ) {
+                Text("Save Polygon")
+            }
+
+            Button(
+                onClick = loadPolygon
+            ) {
+                Text("Load Polygon")
+            }
+            Button(onClick = {
+                isBrasenhamUsed = !isBrasenhamUsed // zmienia wartość zmiennej stanu
+            }) {
+                Text(text = if (isBrasenhamUsed) "Draw with Wu Algorithm" else "Draw with Brasenham Algorithm")
+            }
+        }
     }
 
     if(showLengthWindow) {

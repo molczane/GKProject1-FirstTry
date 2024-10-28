@@ -1,6 +1,7 @@
 package org.example.project.algorithms
 
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.unit.dp
 import org.example.project.utils.BezierControlPoint
 import org.example.project.utils.ContinuityClass
 import org.example.project.utils.CubicBezierSegment
@@ -39,6 +40,9 @@ fun correctToTheLeft(
 
                 val previousIndex = if(indexCurrent == 0) lineSegments.size - 1 else indexCurrent - 1
                 if(lineSegments[previousIndex].relation == Relations.Bezier) {
+                    val draggingBezierControlPointIndex = bezierControlPoints.indexOfFirst {
+                        (lineSegments[previousIndex].bezierSegment!!.control2 - it.offset).getDistance() < 20F
+                    }.takeIf { it != -1 }
                     when(lineSegments[previousIndex].bezierSegment!!.endPointContinuityClass)
                     {
                         ContinuityClass.C1 -> {
@@ -61,6 +65,12 @@ fun correctToTheLeft(
                                         it[previousIndex].bezierSegment!!.endPointContinuityClass
                                     )
                                 )
+                                val updatedBezierControlPoints = bezierControlPoints.toMutableList().apply {
+                                    this[draggingBezierControlPointIndex!!] = this[draggingBezierControlPointIndex!!].copy(
+                                        offset = newControlPoint
+                                    )
+                                }
+                                onBezierControlPointsChange(updatedBezierControlPoints)
                             }
                         }
                         ContinuityClass.G1 -> {
@@ -84,6 +94,12 @@ fun correctToTheLeft(
                                         it[previousIndex].bezierSegment!!.endPointContinuityClass
                                     )
                                 )
+                                val updatedBezierControlPoints = bezierControlPoints.toMutableList().apply {
+                                    this[draggingBezierControlPointIndex!!] = this[draggingBezierControlPointIndex!!].copy(
+                                        offset = newControlPoint
+                                    )
+                                }
+                                onBezierControlPointsChange(updatedBezierControlPoints)
                             }
                         }
                         ContinuityClass.G0 -> {
@@ -100,8 +116,12 @@ fun correctToTheLeft(
             Relations.Bezier -> {
                 var updatedLines : MutableList<LineSegment> = emptyList<LineSegment>().toMutableList()
 
+                val draggingBezierControlPointIndex = bezierControlPoints.indexOfFirst {
+                    (lineSegments[indexCurrent].bezierSegment!!.control2 - it.offset).getDistance() < 20F
+                }.takeIf { it != -1 }
                 when(lineSegments[indexCurrent].bezierSegment!!.endPointContinuityClass)
                 {
+
                     ContinuityClass.C1 -> {
                         updatedLines = lineSegments.toMutableList().also {
                             val newControlPoint = calculateNewControlPointC1(it[(indexCurrent + 1)%lineSegments.size].end, pointsList[(indexCurrent + 1)%lineSegments.size])
@@ -116,6 +136,12 @@ fun correctToTheLeft(
                                     it[indexCurrent].bezierSegment!!.endPointContinuityClass
                                 )
                             )
+                            val updatedBezierControlPoints = bezierControlPoints.toMutableList().apply {
+                                this[draggingBezierControlPointIndex!!] = this[draggingBezierControlPointIndex!!].copy(
+                                    offset = newControlPoint
+                                )
+                            }
+                            onBezierControlPointsChange(updatedBezierControlPoints)
                         }
                     }
                     ContinuityClass.G1 -> {
@@ -139,6 +165,12 @@ fun correctToTheLeft(
                                     it[indexCurrent].bezierSegment!!.endPointContinuityClass
                                 )
                             )
+                            val updatedBezierControlPoints = bezierControlPoints.toMutableList().apply {
+                                this[draggingBezierControlPointIndex!!] = this[draggingBezierControlPointIndex!!].copy(
+                                    offset = newControlPoint
+                                )
+                            }
+                            onBezierControlPointsChange(updatedBezierControlPoints)
                         }
                     }
                     ContinuityClass.G0 -> {

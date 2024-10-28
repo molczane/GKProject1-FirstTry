@@ -15,7 +15,8 @@ fun DrawScope.drawQuadraticBezier(start: Offset, control: Offset, end: Offset, c
         val y = (1 - t) * (1 - t) * start.y + 2 * (1 - t) * t * control.y + t * t * end.y
         val currentPoint = Offset(x, y)
 
-        drawLine(color = color, start = previousPoint, end = currentPoint, strokeWidth = 2f)
+//        drawLine(color = color, start = previousPoint, end = currentPoint, strokeWidth = 2f)
+        drawWuLine(color = color, start = previousPoint, end = currentPoint)
         previousPoint = currentPoint
     }
 }
